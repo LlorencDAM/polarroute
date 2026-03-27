@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#050A14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>PolarRoute — Polarier Mallorca</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ====================================================
+       index.html — Pantalla de login i selecció de ROL
+       Hackathon InnovaFP 2026 · Polarier
+       ==================================================== -->
+
+  <div class="container">
+
+    <!-- Splash: logo i marca -->
+    <div class="login-splash">
+      <div class="brand-icon">🧊</div>
+      <div class="brand-name">PolarRoute</div>
+      <p class="brand-tagline">Gestió intel·ligent de rutes · Polarier Mallorca</p>
+    </div>
+
+    <!-- Selecció de ROL -->
+    <div class="section">
+      <div class="section-title">Accedeix com a</div>
+      <div class="role-grid">
+        <button class="role-btn" onclick="selectRole('xofer', this)">
+          <span class="role-icon">🚚</span>
+          <span class="role-text">Xofer</span>
+        </button>
+        <button class="role-btn" onclick="selectRole('hotel', this)">
+          <span class="role-icon">🏨</span>
+          <span class="role-text">Hotel</span>
+        </button>
+        <button class="role-btn" onclick="selectRole('gestor', this)">
+          <span class="role-icon">📊</span>
+          <span class="role-text">Gestor</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Formulari Xofer (ocult fins seleccionar rol) -->
+    <div id="form-xofer" class="section" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Tipus de vehicle</label>
+        <select id="sel-tipus" class="form-control" onchange="onTipusChange()">
+          <option value="">— Selecciona tipus —</option>
+          <option value="N1">N1 — Vehicle lleuger (15 carros màx.)</option>
+          <option value="N2">N2 — Vehicle pesant (27 carros màx.)</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Matrícula</label>
+        <select id="sel-matricula" class="form-control" onchange="checkReady()">
+          <option value="">— Primer selecciona el tipus —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Formulari Hotel (ocult fins seleccionar rol) -->
+    <div id="form-hotel" class="section" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Selecciona el teu hotel</label>
+        <select id="sel-hotel" class="form-control" onchange="checkReady()">
+          <option value="">— Selecciona hotel —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Botó d'accés -->
+    <div id="btn-wrap" style="display:none;">
+      <button id="btn-entrar" class="btn btn-primary" onclick="entrar()" disabled>
+        <span>Entrar</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Peu de pàgina -->
+    <div class="divider" style="margin-top: 32px;"></div>
+    <div class="center text-sm text-muted" style="padding-bottom: 20px;">
+      <strong style="color: var(--accent-red);">POLARIER</strong> · Bugaderia Industrial Mallorca<br>
+      PolarRoute v1.0 · Hackathon InnovaFP 2026
+    </div>
+
+  </div>
+
+  <!-- Dades -->
+  <script src="data.js"></script>
+  <script>
+    // ============================================================
+    // Lògica de login — selecció de rol i navegació
+    // ============================================================
+
+    let rolActiu = null;
+
+    /**
+     * Selecciona un rol i mostra el formulari corresponent
+     * @param {string} rol - 'xofer' | 'hotel' | 'gestor'
+     * @param {HTMLElement} btn - Botó clicat
+     */
+    function selectRole(rol, btn) {
+      // Marca el botó com a seleccionat
+      document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      rolActiu = rol;
+
+      // Amaga tots els formularis i el botó
+      document.getElementById('form-xofer').style.display = 'none';
+      document.getElementById('form-hotel').style.display = 'none';
+      document.getElementById('btn-wrap').style.display = 'none';
+
+      const btnEntrar = document.getElementById('btn-entrar');
+      btnEntrar.disabled = true;
+
+      if (rol === 'xofer') {
+        document.getElementById('form-xofer').style.display = 'block';
+        document.getElementById('btn-wrap').style.display = 'block';
+        // Reinicia el selector de matrícula
+        document.getElementById('sel-tipus').value = '';
+        document.getElementById('sel-matricula').innerHTML = '<option value="">— Primer selecciona el tipus —</option>';
+      } else if (rol === 'hotel') {
+        document.getElementById('form-hotel').style.display = 'block';
+        document.getElementById('btn-wrap').style.display = 'block';
+        omplirHotels();
+      } else if (rol === 'gestor') {
+        // El gestor no necessita formulari addicional
+        document.getElementById('btn-wrap').style.display = 'block';
+        btnEntrar.disabled = false;
+      }
+    }
+
+    /**
+     * Omple el selector d'hotels agrupats per zona
+     */
+    function omplirHotels() {
+      const sel = document.getElementById('sel-hotel');
+      sel.innerHTML = '<option value="">— Selecciona hotel —</option>';
+
+      const zones = [
+        { key: 'nord',      label: '🌊 Zona Nord — Alcúdia / Can Picafort' },
+        { key: 'palma',     label: '🏙️ Zona Palma / s\'Arenal' },
+        { key: 'palmanova', label: '🏖️ Zona Palmanova / Magaluf' },
+        { key: 'peguera',   label: '⛵ Zona Peguera' },
+        { key: 'est',       label: '🌅 Zona Est — Cala d\'Or / Ratjada / Millor' }
+      ];
+
+      zones.forEach(zona => {
+        const hotelsZona = getHotelsByZona(zona.key);
+        if (!hotelsZona.length) return;
+        const grp = document.createElement('optgroup');
+        grp.label = zona.label;
+        hotelsZona.forEach(h => {
+          const opt = document.createElement('option');
+          opt.value = h.id;
+          opt.textContent = h.nom + (h.alerta ? ' ⚠️' : '');
+          grp.appendChild(opt);
+        });
+        sel.appendChild(grp);
+      });
+    }
+
+    /**
+     * Actualitza les matrícules disponibles quan es canvia el tipus de vehicle
+     */
+    function onTipusChange() {
+      const tipus = document.getElementById('sel-tipus').value;
+      const sel = document.getElementById('sel-matricula');
+      sel.innerHTML = '<option value="">— Selecciona matrícula —</option>';
+      document.getElementById('btn-entrar').disabled = true;
+
+      if (!tipus) return;
+
+      VEHICLES.filter(v => v.tipus === tipus).forEach(v => {
+        const opt = document.createElement('option');
+        opt.value = v.matricula;
+        opt.textContent = `${v.matricula} — ${v.xofer}`;
+        sel.appendChild(opt);
+      });
+    }
+
+    /**
+     * Comprova si tots els camps requerits estan plens per activar el botó
+     */
+    function checkReady() {
+      const btn = document.getElementById('btn-entrar');
+      if (rolActiu === 'xofer') {
+        btn.disabled = !document.getElementById('sel-matricula').value;
+      } else if (rolActiu === 'hotel') {
+        btn.disabled = !document.getElementById('sel-hotel').value;
+      }
+    }
+
+    /**
+     * Navega a la pàgina correcta amb els paràmetres seleccionats
+     */
+    function entrar() {
+      if (rolActiu === 'gestor') {
+        window.location.href = 'gestor.html';
+      } else if (rolActiu === 'hotel') {
+        const hotelId = document.getElementById('sel-hotel').value;
+        if (!hotelId) return;
+        window.location.href = `hotel.html?hotel=${encodeURIComponent(hotelId)}`;
+      } else if (rolActiu === 'xofer') {
+        const matricula = document.getElementById('sel-matricula').value;
+        const tipus = document.getElementById('sel-tipus').value;
+        if (!matricula) return;
+        window.location.href = `xofer.html?matricula=${encodeURIComponent(matricula)}&tipus=${encodeURIComponent(tipus)}`;
+      }
+    }
+  </script>
+</body>
+</html>

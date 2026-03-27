@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#050A14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>PolarRoute — Xofer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ====================================================
+       xofer.html — Ruta del dia + alertes en temps real
+       Hackathon InnovaFP 2026 · Polarier
+       ==================================================== -->
+
+  <!-- Capçalera sticky -->
+  <header class="page-header">
+    <div class="logo-icon">🚚</div>
+    <div class="header-info">
+      <h1 id="header-title">Vehicle · —</h1>
+      <div class="subtitle" id="header-subtitle">Carregant ruta...</div>
+    </div>
+    <div id="header-badge"></div>
+  </header>
+
+  <div class="container" style="margin-top: 6px;">
+
+    <!-- === ALERTA ACTIVA — caixa prominent, visible si hi ha alertes === -->
+    <div id="zona-alerta" style="display:none;"></div>
+
+    <!-- === RUTA DEL DIA === -->
+    <div class="section">
+      <div class="section-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
+        Ruta del dia · <span id="ruta-parades">0</span> parades
+      </div>
+      <div class="card" style="padding: 8px 12px;">
+        <ul class="stop-list" id="stop-list">
+          <!-- Generat per JavaScript -->
+        </ul>
+      </div>
+    </div>
+
+    <!-- === ACCIÓ: Marcar parada completada === -->
+    <div class="section" style="margin-bottom: var(--sp-md);">
+      <button class="btn btn-secondary" onclick="marcarCompletada()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M20 6L9 17l-5-5"/>
+        </svg>
+        Marcar parada actual com completada
+      </button>
+    </div>
+
+    <!-- === RESUM DEL DIA === -->
+    <div class="section">
+      <div class="section-title">Resum del dia</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value cyan" id="stat-km">—</div>
+          <div class="stat-label">Km estimats</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value green" id="stat-co2">—</div>
+          <div class="stat-label">CO₂ emès (kg)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-carros">—</div>
+          <div class="stat-label">Carros avui</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value orange" id="stat-alertes">0</div>
+          <div class="stat-label">Alertes actives</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === NOTA CO2 === -->
+    <div class="card text-sm text-muted center" style="padding: 10px;">
+      Factor CO₂: <strong id="factor-co2-text">—</strong> kg/km
+      · Font: Aina Terrades, Dept. Sostenibilitat
+    </div>
+
+  </div>
+
+  <!-- Navegació inferior -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9,22 9,12 15,12 15,22"/>
+      </svg>
+      Inici
+    </a>
+    <button class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 12h18M3 6l3 3-3 3M15 6l3 3-3 3"/>
+      </svg>
+      Ruta
+    </button>
+    <a href="gestor.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      Dashboard
+    </a>
+  </nav>
+
+  <script src="data.js"></script>
+  <script>
+    // ============================================================
+    // xofer.html — Lògica principal de la vista del xofer
+    // ============================================================
+
+    // Llegeix paràmetres de la URL — default: vehicle 9012-PMN (té alerta activa, ideal per demo)
+    const params   = new URLSearchParams(window.location.search);
+    const matricula = params.get('matricula') || '9012-PMN';
+    const tipusUrl  = params.get('tipus') || 'N1';
+
+    // Cerca el vehicle — fallback al vehicle amb alerta per a la demo
+    const vehicle = getVehicleByMatricula(matricula)
+                 || VEHICLES.find(v => v.tipus === tipusUrl)
+                 || VEHICLES[2];
+
+    // Hotels de la ruta del vehicle
+    const idsRuta    = RUTES[vehicle.ruta] || RUTES['N1'];
+    const hotelsRuta = idsRuta.map(id => getHotelById(id)).filter(Boolean);
+
+    // Seguiment de quines parades estan completades
+    const paradesCompletades = new Set();
+
+    /**
+     * Punt d'entrada — inicialitza tota la pàgina
+     */
+    function inicialitzar() {
+      renderCapcalera();
+      renderAlertes();
+      renderParades();
+      renderStats();
+    }
+
+    /**
+     * Renderitza la capçalera amb les dades del vehicle
+     */
+    function renderCapcalera() {
+      const hubNom = vehicle.hub === 'sa_pobla'
+        ? 'Hub Sa Pobla · Zona Nord'
+        : 'Son Castelló · ' + vehicle.ruta.replace('N2_', 'Zona ').replace('palma','Palma').replace('palmanova','Palmanova').replace('peguera','Peguera').replace('est','Est');
+
+      document.getElementById('header-title').textContent =
+        `${vehicle.tipus} · ${vehicle.matricula}`;
+      document.getElementById('header-subtitle').textContent = hubNom;
+
+      document.getElementById('header-badge').innerHTML =
+        `<span class="vehicle-chip">${vehicle.tipus}</span>`;
+
+      document.getElementById('factor-co2-text').textContent =
+        CO2_FACTORS[vehicle.tipus];
+    }
+
+    /**
+     * Renderitza les alertes actives prominents
+     */
+    function renderAlertes() {
+      // Alertes que afecten vehicles de la ruta o hotels de la ruta
+      const alertesActives = ALERTES.filter(a =>
+        a.estat === 'activa' && (
+          a.vehicles_afectats.includes(vehicle.matricula) ||
+          hotelsRuta.some(h => h.id === a.hotel_id && h.alerta)
+        )
+      );
+
+      const zona = document.getElementById('zona-alerta');
+
+      if (!alertesActives.length) {
+        zona.style.display = 'none';
+        return;
+      }
+
+      zona.style.display = 'block';
+      let html = `<div class="section-title">🚨 Alerta activa</div>`;
+
+      alertesActives.forEach(alerta => {
+        const hotel = getHotelById(alerta.hotel_id);
+        const nomHotel = hotel ? hotel.nom : 'Hotel desconegut';
+
+        html += `
+          <!-- Bloc d'alerta per ${nomHotel} -->
+          <div class="alert-box danger" style="margin-bottom: 8px;">
+            <div class="alert-header">
+              🚨 ${alerta.hora_detectada}h — ${nomHotel}
+            </div>
+            <div class="alert-body">
+              <strong style="color: var(--danger);">${alerta.missatge}</strong>
+            </div>
+          </div>
+
+          <div class="alert-box warning" style="margin-bottom: 8px;">
+            <div class="alert-header">✅ Recomanació de ruta</div>
+            <div class="alert-body">${alerta.recomanacio}</div>
+          </div>
+
+          <div class="alert-box info" style="margin-bottom: 16px;">
+            <div class="alert-header">🅿️ Pla B — Fallback</div>
+            <div class="alert-body">${alerta.fallback}</div>
+          </div>
+        `;
+      });
+
+      zona.innerHTML = html;
+
+      // Actualitza el comptador d'alertes a les estadístiques
+      document.getElementById('stat-alertes').textContent = alertesActives.length;
+    }
+
+    /**
+     * Renderitza la llista de parades de la ruta
+     */
+    function renderParades() {
+      const list = document.getElementById('stop-list');
+      list.innerHTML = '';
+
+      document.getElementById('ruta-parades').textContent = hotelsRuta.length;
+
+      hotelsRuta.forEach((hotel, i) => {
+        const li = document.createElement('li');
+        li.className = 'stop-item' + (paradesCompletades.has(hotel.id) ? ' done' : '');
+        li.id = `stop-${hotel.id}`;
+
+        // Determina badge d'estat
+        let badge = '';
+        if (paradesCompletades.has(hotel.id)) {
+          badge = `<span class="badge badge-neutral">Fet</span>`;
+        } else if (hotel.alerta) {
+          badge = `<span class="badge badge-danger"><span class="status-dot danger"></span>Ocupat</span>`;
+        } else if (hotel.moll_ocupat) {
+          badge = `<span class="badge badge-alert"><span class="status-dot alert"></span>Espera</span>`;
+        } else {
+          badge = `<span class="badge badge-ok"><span class="status-dot ok"></span>OK</span>`;
+        }
+
+        // Informació extra si hi ha alerta (fins quina hora)
+        let extra = '';
+        if (hotel.alerta && hotel.fins_hora && !paradesCompletades.has(hotel.id)) {
+          extra = `<br><span style="color:var(--danger); font-weight:600;">⚠️ Moll ocupat fins les ${hotel.fins_hora}h</span>`;
+        }
+
+        li.innerHTML = `
+          <div class="stop-number">${i + 1}</div>
+          <div class="stop-info">
+            <div class="stop-name">${hotel.nom}</div>
+            <div class="stop-meta">
+              ${hotel.carros} carros &nbsp;·&nbsp; ${hotel.km_hub} km &nbsp;·&nbsp; ETA ${hotel.eta_prevista}
+              ${extra}
+            </div>
+          </div>
+          <div class="stop-badge">${badge}</div>
+        `;
+
+        list.appendChild(li);
+      });
+    }
+
+    /**
+     * Actualitza els comptadors del resum del dia
+     */
+    function renderStats() {
+      const kmTotals    = hotelsRuta.reduce((acc, h) => acc + h.km_hub, 0);
+      const carrosTotals = hotelsRuta.reduce((acc, h) => acc + h.carros, 0);
+      const co2Total    = calcularCO2(kmTotals, vehicle.tipus);
+
+      document.getElementById('stat-km').textContent     = Math.round(kmTotals * 10) / 10;
+      document.getElementById('stat-co2').textContent    = co2Total;
+      document.getElementById('stat-carros').textContent = carrosTotals;
+    }
+
+    /**
+     * Marca la primera parada pendent com a completada (demo interactiva)
+     */
+    function marcarCompletada() {
+      const pendents = hotelsRuta.filter(h => !paradesCompletades.has(h.id));
+      if (!pendents.length) return;
+
+      const hotel = pendents[0];
+      paradesCompletades.add(hotel.id);
+
+      // Re-renderitza la llista per reflectir el canvi
+      renderParades();
+
+      // Actualitza el badge en el DOM directament per suavitat visual
+      const item = document.getElementById(`stop-${hotel.id}`);
+      if (item) {
+        item.classList.add('done');
+        const badge = item.querySelector('.stop-badge');
+        if (badge) badge.innerHTML = `<span class="badge badge-neutral">Fet</span>`;
+      }
+    }
+
+    // Inicialitza la pàgina en carregar
+    inicialitzar();
+
+    // Simula actualitzacions en temps real cada 30 segons
+    setInterval(() => renderAlertes(), 30000);
+  </script>
+</body>
+</html>

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#050A14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>PolarRoute — Hotel</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ====================================================
+       hotel.html — Estat del moll + notificació d'alertes
+       Hackathon InnovaFP 2026 · Polarier
+       ==================================================== -->
+
+  <!-- Capçalera sticky -->
+  <header class="page-header">
+    <div class="logo-icon">🏨</div>
+    <div class="header-info">
+      <h1 id="header-hotel">Hotel</h1>
+      <div class="subtitle" id="header-zona">Carregant...</div>
+    </div>
+    <div id="header-alerta-badge"></div>
+  </header>
+
+  <div class="container" style="margin-top: 6px;">
+
+    <!-- === ESTAT DEL MOLL === -->
+    <div class="section">
+      <div class="section-title">Estat del moll</div>
+      <div class="card" id="card-moll">
+
+        <!-- Toggle: LLIURE / OCUPAT -->
+        <div class="toggle-row">
+          <div>
+            <div class="toggle-label-text" id="moll-label">LLIURE</div>
+            <div class="text-sm text-muted" id="moll-sublabel">Cap vehicle al moll</div>
+          </div>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="toggle-moll" onchange="onMollChange()">
+            <span class="toggle-track"></span>
+          </label>
+        </div>
+
+        <!-- Formulari d'ocupació (s'activa quan el moll és OCUPAT) -->
+        <div id="form-ocupat" style="display:none; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle);">
+          <div class="form-group">
+            <label class="form-label">Fins quina hora?</label>
+            <select id="sel-fins-hora" class="form-control" onchange="onFinsHoraChange()">
+              <option value="">— Selecciona hora —</option>
+              <option value="09:00">09:00h</option>
+              <option value="09:30">09:30h</option>
+              <option value="10:00">10:00h</option>
+              <option value="10:30">10:30h</option>
+              <option value="11:00">11:00h</option>
+              <option value="11:30">11:30h</option>
+              <option value="12:00">12:00h</option>
+              <option value="12:30">12:30h</option>
+              <option value="12:45">12:45h</option>
+              <option value="13:00">13:00h</option>
+              <option value="13:30">13:30h</option>
+              <option value="14:00">14:00h</option>
+              <option value="15:00">15:00h</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Motiu</label>
+            <select id="sel-motiu" class="form-control">
+              <option value="vehicle_extern">Vehicle extern (proveïdor)</option>
+              <option value="congelats">Camió de congelats</option>
+              <option value="manteniment">Manteniment / obres</option>
+              <option value="neteja">Neteja del moll</option>
+              <option value="altre">Altre</option>
+            </select>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="notificarOcupat()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
+            </svg>
+            Notificar moll ocupat
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Confirmació de notificació (s'activa després d'enviar) -->
+    <div id="zona-confirmat" style="display:none;" class="section">
+      <div class="alert-box success">
+        <div class="alert-header">✅ Notificació enviada</div>
+        <div class="alert-body" id="confirmat-text">
+          Gestor i vehicles afectats han rebut l'alerta automàticament.
+        </div>
+      </div>
+    </div>
+
+    <!-- === ETA DEL VEHICLE POLARIER === -->
+    <div class="section">
+      <div class="section-title">Vehicle Polarier assignat</div>
+      <div class="card" id="card-eta">
+        <div class="flex-between">
+          <div>
+            <div style="font-size:14px; font-weight:700;" id="eta-vehicle-info">Carregant...</div>
+            <div class="text-sm text-muted mt-sm" id="eta-xofer">—</div>
+          </div>
+          <div style="text-align:right;">
+            <div class="stat-value cyan" style="font-size:22px;" id="eta-hora">—:—</div>
+            <div class="text-sm text-muted">ETA prevista</div>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="flex-between text-sm text-muted">
+          <span>Km restants</span>
+          <span class="text-mono" id="eta-km">— km</span>
+        </div>
+        <div class="flex-between text-sm text-muted mt-sm">
+          <span>Carros a lliurar</span>
+          <span id="eta-carros">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- === BOTÓ: NOTIFICAR VEHICLE EXTERN === -->
+    <div class="section">
+      <button class="btn btn-secondary" onclick="notificarVehicleExtern()" id="btn-vehicle-extern">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M1 3h15v13H1zM16 8l4 2v5h-4M5 16a2 2 0 100 4 2 2 0 000-4zM17 16a2 2 0 100 4 2 2 0 000-4z"/>
+        </svg>
+        Notificar vehicle extern al moll
+      </button>
+    </div>
+
+    <!-- Confirmació de notificació de vehicle extern -->
+    <div id="zona-extern-confirmat" style="display:none;" class="section">
+      <div class="alert-box warning">
+        <div class="alert-header">⚠️ Vehicle extern notificat</div>
+        <div class="alert-body">
+          L'alerta s'ha transmès al gestor i als vehicles de Polarier en ruta cap al teu hotel.
+        </div>
+      </div>
+    </div>
+
+    <!-- === HISTORIAL D'AVUI === -->
+    <div class="section">
+      <div class="section-title">Historial d'avui</div>
+      <div class="card">
+        <ul class="timeline" id="historial-list">
+          <!-- Generat per JavaScript -->
+        </ul>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Navegació inferior -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9,22 9,12 15,12 15,22"/>
+      </svg>
+      Inici
+    </a>
+    <button class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l18-6-6 18-4-8-8-4z"/>
+      </svg>
+      Moll
+    </button>
+    <a href="gestor.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      Dashboard
+    </a>
+  </nav>
+
+  <script src="data.js"></script>
+  <script>
+    // ============================================================
+    // hotel.html — Lògica de la vista de l'hotel
+    // ============================================================
+
+    // Llegeix l'ID de l'hotel des de la URL — default: Lago Aptos (té alerta, ideal per demo)
+    const params    = new URLSearchParams(window.location.search);
+    const hotelId   = params.get('hotel') || 'h_lago_aptos';
+    const hotel     = getHotelById(hotelId) || getHotelById('h_lago_aptos');
+
+    // Estat local del moll (pot ser modificat per l'usuari)
+    let mollOcupat   = hotel.moll_ocupat;
+    let finsHoraActual = hotel.fins_hora;
+
+    // Noms de les zones per mostrar a la capçalera
+    const NOMS_ZONA = {
+      nord:      'Zona Nord · Hub Sa Pobla',
+      palma:     'Zona Palma / s\'Arenal · Son Castelló',
+      palmanova: 'Zona Palmanova / Magaluf · Son Castelló',
+      peguera:   'Zona Peguera · Son Castelló',
+      est:       'Zona Est · Son Castelló'
+    };
+
+    /**
+     * Punt d'entrada — inicialitza la pàgina
+     */
+    function inicialitzar() {
+      renderCapcalera();
+      renderMoll();
+      renderETA();
+      renderHistorial();
+    }
+
+    /**
+     * Actualitza la capçalera amb el nom i zona de l'hotel
+     */
+    function renderCapcalera() {
+      document.getElementById('header-hotel').textContent = hotel.nom;
+      document.getElementById('header-zona').textContent  = NOMS_ZONA[hotel.zona] || hotel.zona;
+
+      // Badge si l'hotel té alerta activa
+      if (hotel.alerta) {
+        document.getElementById('header-alerta-badge').innerHTML =
+          `<span class="badge badge-danger"><span class="status-dot danger"></span>Alerta</span>`;
+      }
+    }
+
+    /**
+     * Renderitza l'estat del moll i el formulari corresponent
+     */
+    function renderMoll() {
+      const toggle    = document.getElementById('toggle-moll');
+      const label     = document.getElementById('moll-label');
+      const sublabel  = document.getElementById('moll-sublabel');
+      const cardMoll  = document.getElementById('card-moll');
+      const formOcupat = document.getElementById('form-ocupat');
+
+      toggle.checked = mollOcupat;
+
+      if (mollOcupat) {
+        label.textContent   = 'OCUPAT';
+        label.style.color   = 'var(--danger)';
+        sublabel.textContent = hotel.motiu_ocupat
+          ? `${hotel.motiu_ocupat}${finsHoraActual ? ' · fins les ' + finsHoraActual + 'h' : ''}`
+          : (finsHoraActual ? `Fins les ${finsHoraActual}h` : 'Moll ocupat');
+        cardMoll.className  = 'card card-danger';
+        formOcupat.style.display = 'block';
+
+        // Pre-selecciona l'hora si ja estava definida
+        if (finsHoraActual) {
+          document.getElementById('sel-fins-hora').value = finsHoraActual;
+        }
+      } else {
+        label.textContent    = 'LLIURE';
+        label.style.color    = 'var(--ok)';
+        sublabel.textContent = 'Cap vehicle al moll — accés lliure';
+        cardMoll.className   = 'card card-ok';
+        formOcupat.style.display = 'none';
+      }
+    }
+
+    /**
+     * Gestiona el canvi del toggle de l'estat del moll
+     */
+    function onMollChange() {
+      mollOcupat = document.getElementById('toggle-moll').checked;
+      // Neteja confirmació anterior si existia
+      document.getElementById('zona-confirmat').style.display = 'none';
+      renderMoll();
+    }
+
+    /**
+     * Actualitza el sublabel en temps real quan es selecciona l'hora
+     */
+    function onFinsHoraChange() {
+      finsHoraActual = document.getElementById('sel-fins-hora').value;
+    }
+
+    /**
+     * Simula l'enviament de la notificació de moll ocupat al gestor
+     */
+    function notificarOcupat() {
+      const hora  = document.getElementById('sel-fins-hora').value;
+      const motiu = document.getElementById('sel-motiu').options[
+        document.getElementById('sel-motiu').selectedIndex
+      ].text;
+
+      if (!hora) {
+        alert('Indica fins quina hora estarà ocupat el moll.');
+        return;
+      }
+
+      // Actualitza les dades locals de l'hotel (simulació)
+      hotel.moll_ocupat  = true;
+      hotel.fins_hora    = hora;
+      hotel.vehicle_extern = true;
+      hotel.motiu_ocupat = motiu;
+      finsHoraActual = hora;
+
+      // Crea una alerta al sistema de dades
+      simularNovaAlerta(hotel.id, `${motiu} al moll de ${hotel.nom} fins les ${hora}h`);
+
+      // Mostra confirmació
+      document.getElementById('confirmat-text').textContent =
+        `Moll ocupat per "${motiu}" fins les ${hora}h. Gestor i vehicles notificats.`;
+      document.getElementById('zona-confirmat').style.display = 'block';
+      document.getElementById('zona-confirmat').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    /**
+     * Simula la notificació d'un vehicle extern al moll
+     */
+    function notificarVehicleExtern() {
+      const btn = document.getElementById('btn-vehicle-extern');
+      btn.disabled = true;
+      btn.innerHTML = '<span>✓ Notificació enviada</span>';
+
+      // Activa el moll com a ocupat si no ho estava
+      if (!mollOcupat) {
+        mollOcupat = true;
+        document.getElementById('toggle-moll').checked = true;
+        renderMoll();
+      }
+
+      // Mostra la confirmació
+      document.getElementById('zona-extern-confirmat').style.display = 'block';
+      document.getElementById('zona-extern-confirmat').scrollIntoView({ behavior: 'smooth' });
+
+      // Restaura el botó al cap de 3 segons
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 3h15v13H1zM16 8l4 2v5h-4M5 16a2 2 0 100 4 2 2 0 000-4zM17 16a2 2 0 100 4 2 2 0 000-4z"/>
+          </svg>
+          Notificar vehicle extern al moll`;
+      }, 3000);
+    }
+
+    /**
+     * Renderitza l'ETA del vehicle Polarier assignat a aquest hotel
+     */
+    function renderETA() {
+      // Cerca el vehicle que té aquest hotel com a destí actual o proper
+      const vehicleAssignat = VEHICLES.find(v =>
+        v.hotel_actual === hotel.id || (RUTES[v.ruta] || []).includes(hotel.id)
+      );
+
+      if (!vehicleAssignat) {
+        document.getElementById('card-eta').innerHTML =
+          `<div class="text-sm text-muted center">Cap vehicle Polarier assignat avui</div>`;
+        return;
+      }
+
+      // Calcula ETA estimada
+      const horaBase  = '08:00';
+      const etaCalc   = hotel.eta_prevista || calcularETA(horaBase, hotel.km_hub);
+      const hotelActualVehicle = vehicleAssignat.hotel_actual
+        ? getHotelById(vehicleAssignat.hotel_actual)
+        : null;
+      const kmRestants = hotel.km_hub - (vehicleAssignat.km_fets % hotel.km_hub);
+
+      document.getElementById('eta-vehicle-info').textContent =
+        `${vehicleAssignat.tipus} · ${vehicleAssignat.matricula}`;
+      document.getElementById('eta-xofer').textContent =
+        `Xofer: ${vehicleAssignat.xofer}`;
+      document.getElementById('eta-hora').textContent = etaCalc;
+      document.getElementById('eta-km').textContent =
+        `${Math.max(0.1, Math.round(kmRestants * 10) / 10)} km`;
+      document.getElementById('eta-carros').textContent =
+        `${hotel.carros} carros`;
+    }
+
+    /**
+     * Renderitza el historial de visites d'avui per a l'hotel
+     */
+    function renderHistorial() {
+      const list = document.getElementById('historial-list');
+      const historial = HISTORIAL_AVUI[hotel.id];
+
+      if (!historial || !historial.length) {
+        list.innerHTML = `<li class="text-sm text-muted" style="padding: 4px 0;">Cap visita registrada avui</li>`;
+        return;
+      }
+
+      list.innerHTML = '';
+      historial.forEach(entry => {
+        const li = document.createElement('li');
+        li.className = `timeline-item ${entry.estat}`;
+        li.innerHTML = `
+          <div class="timeline-hora">${entry.hora}h</div>
+          <div class="timeline-text">${entry.accio}</div>
+          <div class="timeline-sub">${entry.vehicle}</div>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    // Inicialitza la pàgina en carregar
+    inicialitzar();
+  </script>
+</body>
+</html>

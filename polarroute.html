@@ -1,0 +1,3362 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#060d1f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>PolarRoute — Polarier</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <style>
+    /* ── Variables ─────────────────────────────────────────── */
+    :root {
+      --bg:     #060d1f;
+      --bg2:    #0b1530;
+      --bg3:    #111e3a;
+      --text:   #d8e8ff;
+      --text2:  #7a9bcc;
+      --cyan:   #28b7ff;
+      --blue:   #2868ff;
+      --ok:     #00e596;
+      --alert:  #ff9a00;
+      --danger: #ff3f5e;
+      --done:   #26d980;
+      --border: rgba(43,126,255,0.45);
+      --r:      14px;
+    }
+
+    /* ── Reset ─────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+
+    body {
+      font-family: 'Rajdhani', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    /* ── LOGIN ─────────────────────────────────────────────── */
+    #login-screen {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 24px 20px;
+    }
+    .login-logo { text-align: center; margin-bottom: 28px; }
+    .login-logo .ico { font-size: 52px; display: block; margin-bottom: 8px; }
+    .login-logo h1 {
+      font-size: 34px; font-weight: 700; letter-spacing: 3px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .login-logo p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+
+    .login-box {
+      width: 100%;
+      background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r);
+      padding: 22px 18px;
+    }
+
+    .dreceres { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+    .drecera-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 13px 6px;
+      background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+      cursor: pointer; font-family: 'Rajdhani', sans-serif;
+      color: var(--text2); font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.04em;
+      transition: border-color .2s, background .2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .drecera-btn .d-ico { font-size: 24px; margin-bottom: 2px; }
+    .drecera-btn:hover  { border-color: var(--cyan); background: rgba(40,183,255,.08); color: var(--text); }
+    .drecera-btn:active { opacity: .75; }
+
+    .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+    .form-label {
+      display: block; font-size: 11px; font-weight: 700; color: var(--text2);
+      text-transform: uppercase; letter-spacing: .08em; margin-bottom: 5px;
+    }
+    .form-input {
+      width: 100%; padding: 11px 14px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 500;
+      margin-bottom: 13px; outline: none; transition: border-color .2s;
+    }
+    .form-input:focus { border-color: var(--cyan); }
+
+    #login-error {
+      display: none;
+      color: var(--danger); font-size: 13px; font-weight: 700;
+      margin-bottom: 10px; padding: 8px 12px;
+      background: rgba(255,63,94,.08); border: 1px solid rgba(255,63,94,.3); border-radius: 8px;
+    }
+
+    /* ── Botons generals ────────────────────────────────────── */
+    .btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%; padding: 13px 16px; border: none; border-radius: 10px;
+      font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer; letter-spacing: .04em; transition: opacity .2s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { opacity: .78; transform: scale(.98); }
+    .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    .btn-primary  { background: linear-gradient(135deg, var(--cyan), var(--blue)); color: #fff; }
+    .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
+    .btn-warn     { background: rgba(255,154,0,.1);  color: var(--alert); border: 1px solid rgba(255,154,0,.3); }
+    .btn-ok       { background: rgba(0,229,150,.1);  color: var(--ok);    border: 1px solid rgba(0,229,150,.3); }
+
+    /* ── APP SHELL ─────────────────────────────────────────── */
+    #app-shell { display: none; flex-direction: column; min-height: 100vh; opacity: 0; visibility: hidden; }
+
+    #top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 16px;
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 100;
+    }
+    #top-bar .brand {
+      font-size: 17px; font-weight: 700; letter-spacing: 2px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    #top-bar .top-user { font-size: 12px; color: var(--text2); }
+    #btn-sortir {
+      padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(255,63,94,.35);
+      background: rgba(255,63,94,.1); color: var(--danger);
+      font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 700;
+      cursor: pointer;
+    }
+
+    #content-area { flex: 1; overflow-y: auto; padding-bottom: 80px; }
+
+    .screen { display: none; padding: 16px; }
+    .screen.active { display: block; }
+
+    /* ── Cards ─────────────────────────────────────────────── */
+    .card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 16px; margin-bottom: 12px;
+    }
+    .card-title {
+      font-size: 11px; font-weight: 700; color: var(--text2);
+      text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px;
+    }
+
+    /* ── Badges ────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+    }
+    .badge-ok     { background: rgba(0,229,150,.12);  color: var(--ok);    border: 1px solid rgba(0,229,150,.3); }
+    .badge-alert  { background: rgba(255,154,0,.12);  color: var(--alert); border: 1px solid rgba(255,154,0,.3); }
+    .badge-danger { background: rgba(255,63,94,.12);  color: var(--danger);border: 1px solid rgba(255,63,94,.3); }
+    .badge-done   { background: rgba(38,217,128,.12); color: var(--done);  border: 1px solid rgba(38,217,128,.28);}
+
+    /* ── Screen: Vehicle ────────────────────────────────────── */
+    .tipus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+    .tipus-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 18px 10px;
+      background: var(--bg3); border: 2px solid rgba(43,126,255,.3); border-radius: var(--r);
+      cursor: pointer; font-family: 'Rajdhani', sans-serif; color: var(--text2); transition: all .2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tipus-btn .t-ico  { font-size: 30px; }
+    .tipus-btn .t-name { font-size: 15px; font-weight: 700; color: var(--text); }
+    .tipus-btn .t-sub  { font-size: 11px; }
+    .tipus-btn.selected {
+      border-color: var(--cyan); background: rgba(40,183,255,.09);
+      box-shadow: 0 0 14px rgba(40,183,255,.18);
+    }
+
+    /* ── Screen: Ruta ───────────────────────────────────────── */
+    .iniciar-btn {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      width: 100%; padding: 14px; margin-bottom: 10px;
+      background: linear-gradient(135deg, var(--cyan), var(--blue));
+      border: none; border-radius: var(--r);
+      color: #fff; font-family: 'Rajdhani', sans-serif;
+      font-size: 17px; font-weight: 700; letter-spacing: 1.5px;
+      cursor: pointer; box-shadow: 0 4px 22px rgba(40,183,255,.28);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Indicador ruta activa */
+    .ruta-activa {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 13px; border-radius: 10px; margin-bottom: 14px;
+      background: rgba(38,217,128,.08); border: 1px solid rgba(38,217,128,.28);
+      color: var(--done); font-size: 14px; font-weight: 600;
+    }
+
+    /* Animació fade-in per a la llista */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .fade-in { animation: fadeIn 0.35s ease; }
+
+    /* Files de la llista de ruta */
+    .route-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 0; border-bottom: 1px solid rgba(43,126,255,.15);
+      cursor: pointer; transition: background .15s; border-radius: 4px;
+    }
+    .route-item:last-child { border-bottom: none; }
+    .route-item:active { background: rgba(40,183,255,.06); }
+    .route-item.done { opacity: 0.55; cursor: default; }
+    .route-item.done .route-nom { text-decoration: line-through; color: var(--text2); }
+    .route-item.done:active { background: none; }
+
+    .route-num {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: var(--bg3); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: var(--text2); flex-shrink: 0;
+    }
+    .route-info { flex: 1; min-width: 0; }
+    .route-nom  { font-size: 14px; font-weight: 600; }
+    .route-meta { font-size: 12px; color: var(--text2); margin-top: 1px; }
+
+    /* Divisor secció completats */
+    .completed-divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 16px 0 10px;
+    }
+    .completed-divider::before,
+    .completed-divider::after {
+      content: ''; flex: 1;
+      height: 1px; background: rgba(43,126,255,.25);
+    }
+    .completed-divider span {
+      color: var(--done); font-size: 0.85rem;
+      letter-spacing: 0.12em; white-space: nowrap; font-weight: 700;
+    }
+
+    /* ── Parada actual — destacada amb glow ──────────────── */
+    @keyframes badgePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,154,0,.35); }
+      50%       { box-shadow: 0 0 0 5px rgba(255,154,0,0); }
+    }
+    @keyframes incomingCurrent {
+      0%   { transform: scale(1);    box-shadow: none; }
+      40%  { transform: scale(1.04); box-shadow: 0 0 24px rgba(40,183,255,.38); }
+      100% { transform: scale(1.02); box-shadow: 0 0 18px rgba(40,183,255,.2),
+                                                  inset 0 0 12px rgba(40,183,255,.05); }
+    }
+
+    .route-item.current {
+      border: 2px solid var(--cyan);
+      background: linear-gradient(135deg, rgba(40,183,255,.12), rgba(30,97,255,.06));
+      box-shadow: 0 0 18px rgba(40,183,255,.2), inset 0 0 12px rgba(40,183,255,.05);
+      border-radius: 10px;
+      transform: scale(1.02);
+      padding: 12px 10px;
+      margin: 4px -2px;
+      position: relative; z-index: 1;
+      transition: background .15s;
+    }
+    .route-item.current:active  { background: rgba(40,183,255,.16); }
+    .route-item.current.incoming { animation: incomingCurrent 400ms ease-out forwards; }
+
+    /* Label "▶ ARA" sota el nom */
+    .current-label {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      color: var(--cyan); letter-spacing: 0.12em;
+      text-transform: uppercase; margin-bottom: 2px;
+    }
+
+    /* Badge ETA de la parada actual (blau destacat) */
+    .badge-eta-current {
+      display: inline-flex; align-items: center;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: .03em;
+      border: 1px solid rgba(40,183,255,.55);
+      color: var(--cyan); background: rgba(40,183,255,.18);
+    }
+
+    /* Badge ETA alerta parpellejant (moll_ocupat + parada actual) */
+    .badge-eta-alert-pulse {
+      display: inline-flex; align-items: center;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: .03em;
+      border: 1px solid rgba(255,154,0,.55);
+      color: var(--alert); background: rgba(255,154,0,.12);
+      animation: badgePulse 1.8s ease-in-out infinite;
+    }
+
+    /* Parades SEGÜENTS: lleugerament atenuades */
+    .route-item.seguent { opacity: 0.72; }
+
+    /* Divisor — SEGÜENTS — */
+    .next-divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 14px 0 10px;
+    }
+    .next-divider::before,
+    .next-divider::after {
+      content: ''; flex: 1;
+      height: 1px; background: rgba(43,126,255,.2);
+    }
+    .next-divider span {
+      color: var(--text2); font-size: 0.82rem;
+      letter-spacing: 0.12em; white-space: nowrap;
+    }
+
+    /* Botó desfer (inline, petit) */
+    .btn-desfer {
+      padding: 3px 8px; border: 1px solid rgba(40,183,255,.3);
+      background: rgba(40,183,255,.08); color: var(--cyan);
+      border-radius: 6px; font-family: 'Rajdhani', sans-serif;
+      font-size: 11px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-desfer:active { opacity: .7; }
+
+    /* Resum de ruta */
+    .ruta-resum { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .resum-item {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px; text-align: center;
+    }
+    .resum-val   { font-size: 22px; font-weight: 700; color: var(--cyan); }
+    .resum-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+    /* Panell de detall hotel */
+    #detail-panel { display: none; }
+    .detail-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid rgba(43,126,255,.15); font-size: 14px;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-key { color: var(--text2); }
+    .detail-val { font-weight: 600; }
+    .detail-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .detail-btns .btn { font-size: 13px; padding: 10px; }
+
+    /* ── Botó enrere al panell de detall ─────────────────── */
+    .back-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: none; border: 1px solid rgba(43,126,255,.3);
+      border-radius: 8px; color: var(--text2);
+      font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 600;
+      padding: 6px 14px; cursor: pointer; margin-bottom: 12px;
+      letter-spacing: .04em; transition: border-color .2s, color .2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .back-btn:hover  { border-color: var(--cyan); color: var(--cyan); }
+    .back-btn:active { opacity: .7; }
+    .extern-box {
+      margin-top: 10px; padding: 10px 12px;
+      background: rgba(255,154,0,.08); border: 1px solid rgba(255,154,0,.35);
+      border-radius: 8px; font-size: 13px; color: var(--alert); line-height: 1.5;
+    }
+
+    /* ── Notes ──────────────────────────────────────────────── */
+    .note-card {
+      border-left: 3px solid var(--cyan);
+      background: rgba(13,35,73,0.5);
+      border-radius: 0 10px 10px 0;
+      padding: 9px 11px; margin-bottom: 8px;
+    }
+    .note-text { font-size: 14px; color: var(--text); line-height: 1.5; }
+    .note-meta { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+    .nota-textarea {
+      width: 100%; padding: 10px 12px; resize: none; height: 72px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: 14px;
+      margin-bottom: 8px; outline: none; transition: border-color .2s;
+    }
+    .nota-textarea:focus { border-color: var(--cyan); }
+    /* ── Alertes ─────────────────────────────────────────────── */
+    .alert-card { border-radius: var(--r); padding: 16px; margin-bottom: 12px; }
+    .alert-card.warning { background: rgba(255,154,0,.08);  border: 1px solid rgba(255,154,0,.4); }
+    .alert-card.success { background: rgba(0,229,150,.07);  border: 1px solid rgba(0,229,150,.35); }
+    .alert-card .ac-head {
+      font-size: 14px; font-weight: 700; margin-bottom: 8px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .alert-card.warning .ac-head { color: var(--alert); }
+    .alert-card.success .ac-head { color: var(--ok); }
+    .alert-card .ac-body { font-size: 13px; color: var(--text2); line-height: 1.65; }
+    .no-alertes { text-align: center; padding: 48px 20px; color: var(--text2); font-size: 15px; }
+
+    /* ── Dashboard gestor ───────────────────────────────────── */
+    .counters-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+    .counter-card {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 14px 8px; text-align: center;
+    }
+    .counter-val   { font-size: 24px; font-weight: 700; color: var(--cyan); }
+    .counter-label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; margin-top: 2px; }
+
+    .vehicle-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 12px 0; border-bottom: 1px solid rgba(43,126,255,.15); font-size: 13px;
+    }
+    .vehicle-row:last-child { border-bottom: none; }
+    .v-badge {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--bg3); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 800; color: var(--cyan); flex-shrink: 0;
+    }
+    .v-info { flex: 1; min-width: 0; }
+    .v-mat    { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .v-xofer  { font-size: 11px; color: var(--text2); margin-top: 1px; }
+    .v-hotel  { font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Barra de progrés (gestor) */
+    .progress-bar-wrap {
+      height: 5px; background: rgba(43,126,255,.15);
+      border-radius: 3px; margin-top: 6px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+    .progress-text { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+    /* ── Contenidor del mapa Leaflet ────────────────────────── */
+    #map-container {
+      width: 100%; height: 340px;
+      border-radius: 14px; overflow: hidden;
+      border: 1px solid rgba(43,126,255,.35);
+    }
+    /* Adapta els tiles OSM al dark theme neon */
+    #map-container .leaflet-tile {
+      filter: brightness(.75) saturate(.8) hue-rotate(180deg) invert(1);
+    }
+    /* Assegura que els controls de Leaflet es veuen bé */
+    #map-container .leaflet-control-zoom a {
+      background: var(--bg2); color: var(--text); border-color: var(--border);
+    }
+    .map-segment-link {
+      display: block; padding: 9px 12px; margin-bottom: 6px;
+      border: 1px solid rgba(43,126,255,.3); border-radius: 10px;
+      color: var(--cyan); font-size: 13px; text-decoration: none;
+      background: rgba(11,21,48,.6);
+      font-family: 'Rajdhani', sans-serif; font-weight: 600; letter-spacing: .02em;
+    }
+    .map-segment-link:active { opacity: .75; }
+
+    /* ── Mapa placeholder ───────────────────────────────────── */
+    .mapa-placeholder {
+      height: 320px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+      border: 2px dashed rgba(40,183,255,.25); border-radius: var(--r);
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(40,183,255,.04) 39px, rgba(40,183,255,.04) 40px),
+        repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(40,183,255,.04) 39px, rgba(40,183,255,.04) 40px);
+    }
+    .mapa-placeholder .mp-ico { font-size: 42px; opacity: .35; }
+    .mapa-placeholder p { color: var(--text2); font-size: 14px; font-weight: 600; }
+    .mapa-placeholder small { color: rgba(122,155,204,.5); font-size: 12px; }
+
+    /* ── Bottom nav ─────────────────────────────────────────── */
+    #bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 420px;
+      background: rgba(9,18,42,.97); border-top: 1px solid var(--border);
+      backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      display: flex; justify-content: space-around;
+      padding: 8px 0 max(12px, env(safe-area-inset-bottom));
+      z-index: 200;
+    }
+    .nav-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 4px 14px; background: none; border: none;
+      color: rgba(216,232,255,.35);
+      font-family: 'Rajdhani', sans-serif; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .05em;
+      cursor: pointer; transition: color .2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .nav-btn .n-ico { font-size: 22px; }
+    .nav-btn.active { color: var(--cyan); }
+
+    /* ── Toast missatge breu ────────────────────────────────── */
+    #toast {
+      position: fixed; bottom: 88px; left: 50%; transform: translateX(-50%);
+      background: rgba(38,217,128,.92); color: #060d1f;
+      padding: 8px 20px; border-radius: 20px; font-weight: 700; font-size: 13px;
+      pointer-events: none; z-index: 300;
+      opacity: 0; transition: opacity 0.35s;
+      white-space: nowrap;
+    }
+    #toast.visible { opacity: 1; }
+
+    /* ── Animació Login / Logout ────────────────────────── */
+    @keyframes login-out {
+      from { opacity:1; transform: scale(1); }
+      to   { opacity:0; transform: scale(0.96); }
+    }
+    @keyframes app-in {
+      from { opacity:0; transform: translateY(-8px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+    .login-hiding  { animation: login-out 400ms ease-in forwards; pointer-events:none; }
+    .app-revealing { animation: app-in 500ms ease-out forwards; }
+
+    /* ── Badge ETA (hora estimada d'arribada) ────────────── */
+    .badge-eta {
+      display: inline-flex; align-items: center;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: .03em;
+      border: 1px solid rgba(43,126,255,.35);
+      color: rgba(122,155,204,.85); background: transparent;
+    }
+    .badge-eta-alert {
+      display: inline-flex; align-items: center;
+      padding: 3px 9px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: .03em;
+      border: 1px solid rgba(255,154,0,.45);
+      color: var(--alert); background: rgba(255,154,0,.08);
+    }
+
+    /* ── Notes: botons acció + edició in-place ───────────── */
+    .note-card { position: relative; padding-right: 64px; }
+    .note-actions {
+      display: flex; gap: 5px;
+      position: absolute; top: 8px; right: 8px;
+    }
+    .btn-note-action {
+      padding: 3px 7px; border-radius: 6px; font-size: 12px; font-weight: 700;
+      cursor: pointer; font-family: 'Rajdhani', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-note-edit   { background: rgba(40,183,255,.12); color: var(--cyan);   border: 1px solid rgba(40,183,255,.25); }
+    .btn-note-delete { background: rgba(255,63,94,.1);   color: var(--danger); border: 1px solid rgba(255,63,94,.25); }
+    .btn-note-save   { background: rgba(0,229,150,.1);   color: var(--ok);     border: 1px solid rgba(0,229,150,.3); }
+    .btn-note-cancel { background: rgba(122,155,204,.1); color: var(--text2);  border: 1px solid rgba(122,155,204,.2); }
+
+    .note-edit-input {
+      width: 100%; padding: 6px 8px; resize: none; height: 60px;
+      background: var(--bg3); border: 1px solid var(--cyan); border-radius: 6px;
+      color: var(--text); font-family: 'Rajdhani', sans-serif; font-size: 14px;
+      outline: none; margin-bottom: 6px;
+    }
+    .autosave-indicator {
+      font-size: 11px; color: var(--ok); font-weight: 700;
+      opacity: 0; transition: opacity 0.3s; white-space: nowrap;
+      align-self: flex-end; margin-bottom: 2px;
+    }
+    .autosave-indicator.visible { opacity: 1; }
+
+    /* ── Alert cards de notes (blaves) ───────────────────── */
+    .alert-card.note { background: rgba(40,183,255,.06); border: 1px solid rgba(40,183,255,.35); }
+    .alert-card.note .ac-head { color: var(--cyan); font-size: 13px; }
+
+    /* ── Utilitats ─────────────────────────────────────────── */
+    .sec-title {
+      font-size: 11px; font-weight: 700; color: var(--text2);
+      text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px;
+    }
+    .mt { margin-top: 16px; }
+    .hint { font-size: 12px; color: var(--text2); text-align: center; margin-top: 0; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+<!-- Toast per a missatges breus -->
+<div id="toast"></div>
+
+<!-- =====================================================
+     PANTALLA DE LOGIN
+     ===================================================== -->
+<div id="login-screen">
+  <div class="login-logo">
+    <span class="ico">🧊</span>
+    <h1>POLARROUTE</h1>
+    <p>Gestió de rutes · Polarier Mallorca</p>
+  </div>
+
+  <div class="login-box">
+    <div class="sec-title">Accés ràpid</div>
+    <div class="dreceres">
+      <button class="drecera-btn" onclick="loginDrecera('xofer01','1234')">
+        <span class="d-ico">🚐</span>Xofer N1
+      </button>
+      <button class="drecera-btn" onclick="loginDrecera('interactiu','1234')">
+        <span class="d-ico">🔄</span>Interactiu
+      </button>
+      <button class="drecera-btn" onclick="loginDrecera('gestor01','1234')">
+        <span class="d-ico">📊</span>Gestor
+      </button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="sec-title">O entra manualment</div>
+
+    <label class="form-label" for="inp-user">Usuari</label>
+    <input id="inp-user" class="form-input" type="text"
+           placeholder="xofer01" autocomplete="username" autocapitalize="none">
+
+    <label class="form-label" for="inp-pass">Contrasenya</label>
+    <input id="inp-pass" class="form-input" type="password"
+           placeholder="••••" autocomplete="current-password" style="margin-bottom:12px;">
+
+    <div id="login-error"></div>
+    <button class="btn btn-primary" onclick="doLogin()">Entrar →</button>
+  </div>
+</div>
+
+
+<!-- =====================================================
+     APP SHELL
+     ===================================================== -->
+<div id="app-shell">
+
+  <div id="top-bar">
+    <span class="brand">POLARROUTE</span>
+    <span class="top-user" id="top-user-label"></span>
+    <button id="btn-sortir" onclick="sortir()">Sortir</button>
+  </div>
+
+  <div id="content-area">
+
+    <!-- ─── Screen: Vehicle ─────────────────────────────── -->
+    <div class="screen" id="screen-vehicle">
+      <div class="card">
+        <div class="card-title">Tipus de vehicle</div>
+        <div class="tipus-grid">
+          <div class="tipus-btn" id="btn-N1" onclick="selectTipus('N1')">
+            <span class="t-ico">🚐</span>
+            <span class="t-name">N1 Lleuger</span>
+            <span class="t-sub">15 carros màx.</span>
+          </div>
+          <div class="tipus-btn" id="btn-N2" onclick="selectTipus('N2')">
+            <span class="t-ico">🚛</span>
+            <span class="t-name">N2 Pesat</span>
+            <span class="t-sub">27 carros màx.</span>
+          </div>
+        </div>
+        <label class="form-label" for="inp-matricula">Matrícula / ID vehicle</label>
+        <input id="inp-matricula" class="form-input" type="text"
+               placeholder="0000-XXX" style="margin-bottom:0;">
+      </div>
+    </div>
+
+    <!-- ─── Screen: Ruta ────────────────────────────────── -->
+    <div class="screen" id="screen-ruta">
+
+      <!-- Zona llista (JS controla el contingut) -->
+      <div id="ruta-list"><!-- generat per renderRuta() --></div>
+
+      <!-- Zona resum -->
+      <div class="sec-title mt" id="ruta-resum-title" style="display:none;">Resum de la ruta</div>
+      <div class="ruta-resum" id="ruta-resum"></div>
+
+      <!-- Panell de detall hotel -->
+      <div id="detail-panel">
+
+        <!-- Botó enrere — a dalt del tot, sempre visible -->
+        <button class="back-btn" onclick="closeDetail()">← Ruta</button>
+
+        <div class="card">
+          <!-- Capçalera detall -->
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+            <span id="det-badge-cap"></span>
+            <h2 id="det-nom" style="font-size:20px; font-weight:700;"></h2>
+          </div>
+          <!-- Camps informació -->
+          <div class="detail-row">
+            <span class="detail-key">Zona</span>
+            <span class="detail-val" id="det-zona"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Hub assignat</span>
+            <span class="detail-val" id="det-hub"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Carros a lliurar</span>
+            <span class="detail-val" id="det-carros"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">Distància</span>
+            <span class="detail-val" id="det-km"></span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-key">CO₂ estimat</span>
+            <span class="detail-val" id="det-co2"></span>
+          </div>
+          <div class="detail-row" style="border-bottom:none;">
+            <span class="detail-key">Estat moll</span>
+            <span id="det-moll"></span>
+          </div>
+          <!-- Info vehicle extern (si moll_ocupat) -->
+          <div id="det-extern" class="extern-box" style="display:none;"></div>
+
+          <!-- Botó marcar completat (ocult per al gestor) -->
+          <button id="btn-completar" class="btn btn-ok"
+                  style="margin-top:14px;"
+                  onclick="marcarCompletat(currentDetailHotelId)">
+            ✓ Marcar com a completat
+          </button>
+
+          <!-- Botó Maps (Tancar eliminat — usa el botó ← Ruta de la capçalera) -->
+          <button class="btn btn-primary" style="margin-top:14px;"
+            onclick="window.open('https://maps.app.goo.gl/XKgp45VXaTgnDgQ98','_blank')">
+            📍 Obrir a Maps
+          </button>
+        </div>
+
+        <!-- Secció notes de l'equip -->
+        <div class="card">
+          <div class="card-title">// NOTES DE L'EQUIP</div>
+          <div id="notes-list"><!-- renderNotes() --></div>
+          <!-- Auto-save: el camp guarda sol després de 800ms sense escriure -->
+          <div style="display:flex; align-items:flex-end; gap:8px; margin-bottom:4px;">
+            <textarea id="inp-nota" class="nota-textarea" style="margin-bottom:0; flex:1;"
+                      placeholder="Afegeix informació rellevant..."></textarea>
+            <span id="autosave-indicator" class="autosave-indicator">Desat ✓</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /screen-ruta -->
+
+    <!-- ─── Screen: Alertes ─────────────────────────────── -->
+    <div class="screen" id="screen-alertes">
+      <div id="alertes-content"></div>
+    </div>
+
+    <!-- ─── Screen: Mapa (xofer + gestor compartit) ────── -->
+    <div class="screen" id="screen-mapa">
+
+      <p id="map-status" style="font-size:13px; color:var(--text2);
+         margin-bottom:10px; letter-spacing:.04em;">
+        // Inicialitzant mapa...
+      </p>
+
+      <!-- Botons interactiu: recarregar ruta assignada + Google Maps (ocults per defecte) -->
+      <div id="interactiu-map-actions" style="display:none; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+        <button id="map-reload-btn" class="btn btn-secondary" type="button" style="flex:1;">
+          🔄 Recarregar ruta
+        </button>
+        <button id="map-maps-btn" class="btn btn-secondary" type="button"
+                style="flex:1;" disabled>
+          🗺 Google Maps
+        </button>
+      </div>
+
+      <!-- Panell GESTOR: planificador manual (ocult per al xofer) -->
+      <div id="gestor-map-panel" style="display:none; margin-bottom:12px;">
+
+        <p style="color:var(--cyan); font-size:11px; font-weight:700;
+           letter-spacing:.08em; text-transform:uppercase; margin-bottom:10px;">
+          // PLANIFICADOR MANUAL
+        </p>
+
+        <!-- Mode de càlcul de la ruta -->
+        <div style="display:flex; gap:16px; margin-bottom:10px; font-size:14px;">
+          <label style="display:flex; align-items:center; gap:6px; color:var(--text2); cursor:pointer;">
+            <input type="radio" name="gestor-route-mode" value="optimized" checked/> Optimitzada
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; color:var(--text2); cursor:pointer;">
+            <input type="radio" name="gestor-route-mode" value="manual"/> Manual
+          </label>
+        </div>
+
+        <!-- Punt final del trajecte -->
+        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:10px; font-size:14px;">
+          <label style="display:flex; align-items:center; gap:6px; color:var(--text2); cursor:pointer;">
+            <input type="radio" name="gestor-end-mode" value="origin" checked/> Tornar a l'origen
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; color:var(--text2); cursor:pointer;">
+            <input type="radio" name="gestor-end-mode" value="son_castello"/> Acabar a Son Castelló
+          </label>
+          <label style="display:flex; align-items:center; gap:6px; color:var(--text2); cursor:pointer;">
+            <input type="radio" name="gestor-end-mode" value="inca"/> Acabar a Inca (Hub)
+          </label>
+        </div>
+
+        <!-- Mode eco -->
+        <label style="display:flex; align-items:center; gap:8px; color:var(--text2);
+               font-size:13px; margin-bottom:14px; cursor:pointer;">
+          <input type="checkbox" id="gestor-eco-mode" checked/>
+          Mode eco (≤15% temps extra → tria tram més sostenible)
+        </label>
+
+        <!-- Assignar a (fix: Xofer Interactiu) -->
+        <div style="margin-bottom:12px;">
+          <p style="color:var(--text2); font-size:11px; font-weight:700;
+             letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px;">
+            // ASSIGNAR A
+          </p>
+          <div style="border:1px solid rgba(43,126,255,.3); border-radius:10px;
+                      background:rgba(40,183,255,.08); padding:10px;
+                      display:flex; align-items:center; justify-content:space-between;">
+            <div>
+              <div style="font-size:1rem; font-weight:600;">🔄 Xofer Interactiu</div>
+              <div style="font-size:0.85rem; color:var(--text2);">
+                3421-MLL · La ruta generada s'assignarà a aquest perfil
+              </div>
+            </div>
+            <span class="badge badge-ok">Actiu</span>
+          </div>
+          <p style="font-size:0.8rem; color:var(--text2); margin-top:6px; font-style:italic;">
+            Més perfils disponibles en properes versions.
+          </p>
+        </div>
+
+        <!-- Llista de destins disponibles -->
+        <p style="color:var(--text2); font-size:11px; font-weight:700;
+           letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px;">
+          // DESTINS DISPONIBLES
+        </p>
+        <div id="gestor-selectable-list"
+             style="max-height:200px; overflow-y:auto; margin-bottom:14px;
+                    border:1px solid rgba(43,126,255,.15); border-radius:10px; padding:6px;"></div>
+
+        <!-- Llista de ruta construïda manualment (drag & drop) -->
+        <p style="color:var(--text2); font-size:11px; font-weight:700;
+           letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px;">
+          // LLISTA DE RUTA
+        </p>
+        <ul id="gestor-selected-list" style="padding:0; margin:0 0 14px;"></ul>
+
+        <!-- Botons d'acció -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+          <button id="gestor-map-build-btn" class="btn btn-primary" type="button" disabled>
+            📍 Generar ruta
+          </button>
+          <button id="gestor-map-clear-btn" class="btn btn-secondary" type="button" disabled>
+            🗑 Netejar
+          </button>
+        </div>
+        <button id="gestor-map-maps-btn" class="btn btn-secondary" type="button"
+                style="width:100%;" disabled>
+          🗺 Obrir trajecte complet a Google Maps
+        </button>
+
+        <!-- Resum de capacitat (s'omple per JS) -->
+        <div id="gestor-capacity-summary"></div>
+
+      </div>
+
+      <!-- Mapa Leaflet (compartit xofer + gestor) -->
+      <div id="map-container"></div>
+      <div id="map-segments" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- ─── Screen: Dashboard (gestor) ─────────────────── -->
+    <div class="screen" id="screen-dashboard">
+      <div id="dashboard-content"></div>
+    </div>
+
+  </div><!-- /content-area -->
+  <nav id="bottom-nav"></nav>
+
+</div><!-- /app-shell -->
+
+<!-- Leaflet JS — ha d'anar ABANS del nostre script per a que L estigui disponible -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""></script>
+
+<script>
+// ============================================================
+// DADES — PolarRoute · Polarier Mallorca
+// ============================================================
+
+const USUARIS = [
+  { user:"xofer01",    pass:"1234", rol:"xofer",      vehicle:"7654-PKR", nom:"Joan M.",    hub:"inca"         },
+  { user:"interactiu", pass:"1234", rol:"interactiu",  vehicle:"3421-MLL", nom:"Interactiu", hub:"inca"         },
+  { user:"gestor01",   pass:"1234", rol:"gestor",      vehicle:null,       nom:"Gestor",     hub:null           },
+];
+
+const HOTELS = [
+  { id:"eden-alcudia",   nom:"Eden Alcúdia",        zona:"nord",      carros:18, km:8,  moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"eden-playa",     nom:"Eden Playa",           zona:"nord",      carros:15, km:6,  moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"lago-aptos",     nom:"Lago Aptos",           zona:"nord",      carros:22, km:5,  moll_ocupat:true,  fins:"12:45", vehicle_extern:"Camió congelats", hora_extern:"12:20"},
+  { id:"lago-playa",     nom:"Lago Playa",           zona:"nord",      carros:19, km:5,  moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"bordoy-bay",     nom:"Bordoy Alcúdia Bay",   zona:"nord",      carros:25, km:9,  moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"orquidea",       nom:"Orquídea Playa",       zona:"nord",      carros:12, km:7,  moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"mar-blau-nord",  nom:"Mar Blau",             zona:"nord",      carros:16, km:11, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"elisa",          nom:"Aparthotel Elisa",     zona:"nord",      carros:10, km:12, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"balanguera",     nom:"Balanguera Beach",     zona:"palma",     carros:27, km:12, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"gran-fiesta",    nom:"Gran Fiesta",          zona:"palma",     carros:27, km:13, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"whala-beach",    nom:"Whala Beach",          zona:"palma",     carros:22, km:16, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"tent-arenal",    nom:"Tent Arenal",          zona:"palma",     carros:27, km:17, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"tent-bahia",     nom:"Tent Bahía de Palma",  zona:"palma",     carros:27, km:15, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"soul-palma",     nom:"Soul Palma",           zona:"palma",     carros:12, km:9,  moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"negresco",       nom:"Negresco",             zona:"palma",     carros:15, km:11, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"bermudas",       nom:"Bermudas",             zona:"palmanova", carros:20, km:22, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"martinique",     nom:"Martinique",           zona:"palmanova", carros:22, km:22, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"tent-palmanova", nom:"Tent Palmanova",       zona:"palmanova", carros:27, km:24, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"torrenova",      nom:"Torrenova",            zona:"palmanova", carros:19, km:25, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"bella-paguera",  nom:"Bella Paguera",        zona:"peguera",   carros:16, km:35, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"lido-park",      nom:"Lido Park",            zona:"peguera",   carros:12, km:36, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"cala-ratjada",   nom:"Club H. Cala Ratjada", zona:"est",       carros:20, km:28, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+  { id:"bahia-este",     nom:"Bahía del Este",       zona:"est",       carros:18, km:22, moll_ocupat:false, fins:null,    vehicle_extern:null,              hora_extern:null  },
+];
+
+const RUTES = {
+  N1: ["eden-alcudia","lago-aptos","bordoy-bay","mar-blau-nord","orquidea","elisa","lago-playa","eden-playa"],
+  N2: ["balanguera","gran-fiesta","whala-beach","tent-arenal","tent-bahia","soul-palma","negresco","bermudas"]
+};
+
+const VEHICLES = [
+  { matricula:"7654-PKR", tipus:"N1", hub:"Inca (Hub)",   xofer:"Joan M.",   hotel_actual:"Lago Aptos",  km:35, estat:"alerta" },
+  { matricula:"3421-MLL", tipus:"N2", hub:"Son Castelló", xofer:"Pere G.",   hotel_actual:"Whala Beach", km:42, estat:"ok"     },
+  { matricula:"9087-IBC", tipus:"N1", hub:"Inca (Hub)",   xofer:"Miquel T.", hotel_actual:"Bordoy Bay",  km:28, estat:"ok"     },
+  { matricula:"5543-RFT", tipus:"N2", hub:"Son Castelló", xofer:"Toni B.",   hotel_actual:"Tent Arenal", km:51, estat:"ok"     },
+];
+
+const CO2_FACTORS = { N1: 0.40, N2: 0.58 };
+
+// Consum de combustible per tipus de vehicle
+const CONSUM_VEHICLE = {
+  N1: { litres_100km: 16, co2_per_litre: 2.51 },
+  N2: { litres_100km: 23, co2_per_litre: 2.52 },
+};
+
+/**
+ * Calcula consum de dièsel i CO₂ emès per a una distància i tipus de vehicle.
+ * @param {number} km
+ * @param {string} tipusVehicle - 'N1' | 'N2'
+ * @returns {{ litres: number, co2_kg: number, km: number }}
+ */
+function calcularConsumDiesel(km, tipusVehicle) {
+  const consum = CONSUM_VEHICLE[tipusVehicle] || CONSUM_VEHICLE.N2;
+  const litres = (km * consum.litres_100km) / 100;
+  const co2    = litres * consum.co2_per_litre;
+  return {
+    litres: parseFloat(litres.toFixed(2)),
+    co2_kg: parseFloat(co2.toFixed(2)),
+    km:     parseFloat(km.toFixed(1)),
+  };
+}
+
+// Progrés simulat (hardcoded) per als vehicles sense xofer logat
+var PROGRESS_SIMULAT = { '9087-IBC': 6, '5543-RFT': 2 };
+
+// ============================================================
+// ESTAT GLOBAL
+// ============================================================
+var currentUser          = null;
+var tipusVehicle         = 'N1';
+var simulatedAlerts      = [];
+var currentDetailHotelId = null;  // ID de l'hotel obert al panell de detall
+var toastTimer           = null;
+var lastCurrentHotelId   = null;  // Rastreja la parada actual per detectar canvis i animar
+
+// ============================================================
+// UTILITATS
+// ============================================================
+
+/**
+ * Calcula l'ETA per a la parada en posició `idx` dins `hotels`
+ * horaBase: "HH:MM" — hora de sortida des del hub (o 07:00 per defecte)
+ * Model: km[i]/30 * 60 min de trajecte + 35 min de servei per parada
+ */
+function calcularETAParada(hotels, idx, horaBase) {
+  var parts  = (horaBase || '07:00').split(':');
+  var minuts = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+
+  for (var i = 0; i <= idx; i++) {
+    minuts += Math.round(hotels[i].km / 30 * 60); // temps de trajecte
+    minuts += 35;                                  // temps de servei al client
+  }
+
+  var h = Math.floor(minuts / 60) % 24;
+  var m = minuts % 60;
+  return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+}
+
+/** Retorna l'hora actual en format HH:MM */
+function nowHora() {
+  var d = new Date();
+  return (d.getHours() < 10 ? '0' : '') + d.getHours()
+       + ':' + (d.getMinutes() < 10 ? '0' : '') + d.getMinutes();
+}
+
+/** Mostra un missatge flotant breu (2 s) */
+function mostrarToast(text) {
+  var el = document.getElementById('toast');
+  el.textContent = text;
+  el.classList.add('visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function() { el.classList.remove('visible'); }, 2000);
+}
+
+/**
+ * Retorna els IDs de la ruta activa per a l'usuari actual.
+ * - Interactiu: llegeix la ruta assignada pel gestor des de localStorage
+ * - Xofer normal: ruta fixa per tipus de vehicle (RUTES)
+ */
+function getRutaActiva() {
+  if (currentUser && currentUser.rol === 'interactiu') {
+    // Interactiu ONLY uses gestor-assigned routes — no RUTES fallback
+    try {
+      var assignada = JSON.parse(
+        localStorage.getItem('polarroute_ruta_assignada_interactiu') || 'null'
+      );
+      return (assignada && assignada.length) ? assignada : [];
+    } catch(e) { return []; }
+  }
+  return RUTES[tipusVehicle] || [];
+}
+
+/**
+ * Retorna les dades d'una parada (hotel o centre logístic) per ID.
+ * Necessari per a la ruta de l'interactiu, que pot incloure centres.
+ */
+function getParadaInfo(id) {
+  // Primer: cerca al diccionari CENTRES (lookup per id)
+  const centreData = Object.values(CENTRES).find(c => c.id === id);
+  if (centreData) {
+    return {
+      id:             centreData.id,
+      nom:            centreData.nom,
+      zona:           'centre',
+      carros:         0,
+      km:             0,
+      moll_ocupat:    false,
+      fins:           null,
+      vehicle_extern: null,
+      hora_extern:    null,
+      centre:         true,
+    };
+  }
+  // Segon: cerca a HOTELS
+  const hotel = HOTELS.find(h => h.id === id);
+  if (hotel) return { ...hotel, centre: false };
+  return null;
+}
+
+/**
+ * Retorna els carros assignats a un hotel per a l'usuari actual.
+ * - Interactiu: usa el mapa de carros guardat pel gestor (si existeix)
+ * - Altres rols: usa el valor per defecte de HOTELS
+ */
+function getCarrosPerHotel(hotelId) {
+  if (currentUser && currentUser.rol === 'interactiu') {
+    try {
+      var carrosMap = JSON.parse(
+        localStorage.getItem('polarroute_carros_interactiu') || '{}'
+      );
+      if (carrosMap[hotelId] !== undefined) return carrosMap[hotelId];
+    } catch(e) {}
+  }
+  var hotel = HOTELS.find(function(h) { return h.id === hotelId; });
+  return hotel ? hotel.carros : 0;
+}
+
+// ============================================================
+// LOCALSTORAGE HELPERS
+// ============================================================
+
+/** Llegeix si la ruta d'una matrícula ha estat iniciada */
+function rutaIniciada(matricula) {
+  try {
+    var raw = localStorage.getItem('polarroute_ruta_iniciada_' + matricula);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+/** Guarda que la ruta ha estat iniciada */
+function guardarRutaIniciada(matricula, hora) {
+  try { localStorage.setItem('polarroute_ruta_iniciada_' + matricula, JSON.stringify({ hora: hora })); }
+  catch(e) {}
+}
+
+/** Llegeix la llista d'hotels completats per una matrícula */
+function completatsList(matricula) {
+  try {
+    var raw = localStorage.getItem('polarroute_completats_' + matricula);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+/** Guarda la llista actualitzada de completats */
+function guardarCompletats(matricula, llista) {
+  try { localStorage.setItem('polarroute_completats_' + matricula, JSON.stringify(llista)); }
+  catch(e) {}
+}
+
+/** Llegeix les notes d'un hotel */
+function getNotes(hotelId) {
+  try {
+    var raw = localStorage.getItem('polarroute_notes_' + hotelId);
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+/** Guarda les notes d'un hotel (màx 5 — elimina la més antiga si cal) */
+function guardarNotes(hotelId, notes) {
+  try {
+    // Si supera el límit, elimina des del principi (la més antiga)
+    while (notes.length > 5) notes.shift();
+    localStorage.setItem('polarroute_notes_' + hotelId, JSON.stringify(notes));
+  } catch(e) {}
+}
+
+// ============================================================
+// AUTENTICACIÓ
+// ============================================================
+
+function loginDrecera(user, pass) {
+  document.getElementById('inp-user').value = user;
+  document.getElementById('inp-pass').value = pass;
+  doLogin();
+}
+
+function doLogin() {
+  var user  = document.getElementById('inp-user').value.trim();
+  var pass  = document.getElementById('inp-pass').value.trim();
+  var errEl = document.getElementById('login-error');
+
+  errEl.style.display = 'none';
+  errEl.textContent   = '';
+
+  if (!user || !pass) {
+    errEl.textContent   = '⚠ Introdueix usuari i contrasenya.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  var found = USUARIS.find(function(u) { return u.user === user && u.pass === pass; });
+
+  if (!found) {
+    errEl.textContent   = '❌ Usuari o contrasenya incorrectes.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  // ─── Login correcte (amb animació) ──────────────────────
+  currentUser = found;
+
+  document.getElementById('top-user-label').textContent = found.user;
+
+  if (found.rol === 'xofer' || found.rol === 'interactiu') {
+    var v = VEHICLES.find(function(veh) { return veh.matricula === found.vehicle; });
+    tipusVehicle = v ? v.tipus : 'N2';
+    document.getElementById('inp-matricula').value = found.vehicle || '';
+  }
+
+  buildNav(found.rol);
+  selectTab((found.rol === 'xofer' || found.rol === 'interactiu') ? 'vehicle' : 'dashboard');
+
+  // Pas 1: la login-box fa fade-out + scale-down durant 400ms
+  var loginBox    = document.querySelector('.login-box');
+  var loginScreen = document.getElementById('login-screen');
+  var appShell    = document.getElementById('app-shell');
+
+  loginBox.classList.add('login-hiding');
+
+  setTimeout(function() {
+    // Pas 2: amaga la pantalla de login, prepara l'app-shell
+    loginScreen.style.display = 'none';
+    loginBox.classList.remove('login-hiding');
+
+    appShell.style.display    = 'flex';
+    appShell.style.visibility = 'visible';
+    appShell.classList.add('app-revealing');
+
+    // Pas 3: un cop l'animació (500ms) acaba, consolida l'opacitat
+    setTimeout(function() {
+      appShell.classList.remove('app-revealing');
+      appShell.style.opacity = '1';
+    }, 510);
+  }, 400);
+}
+
+function sortir() {
+  // NO esborra localStorage: notes i completats persisteixen
+  var appShell    = document.getElementById('app-shell');
+  var loginScreen = document.getElementById('login-screen');
+
+  // Fade-out ràpid de l'app (200ms)
+  appShell.style.transition = 'opacity 200ms ease-in';
+  appShell.style.opacity    = '0';
+
+  setTimeout(function() {
+    currentUser           = null;
+    tipusVehicle          = 'N1';
+    simulatedAlerts       = [];
+    currentDetailHotelId  = null;
+    interactiuDistances   = {};
+    interactiuGeoOrigin   = null;
+
+    appShell.style.display    = 'none';
+    appShell.style.visibility = 'hidden';
+    appShell.style.transition = '';
+    appShell.style.opacity    = '0';
+
+    loginScreen.style.display = 'flex';
+    document.getElementById('inp-user').value = '';
+    document.getElementById('inp-pass').value = '';
+    document.getElementById('login-error').style.display = 'none';
+  }, 200);
+}
+
+// ============================================================
+// NAVEGACIÓ
+// ============================================================
+
+function buildNav(rol) {
+  var tabs = (rol === 'xofer' || rol === 'interactiu')
+    ? [
+        { id:'vehicle', ico:'🔄', label:'Vehicle' },
+        { id:'ruta',    ico:'🗺️', label:'Ruta'    },
+        { id:'alertes', ico:'🚨', label:'Alertes' },
+        { id:'mapa',    ico:'📡', label:'Mapa'    },
+      ]
+    : [
+        { id:'dashboard', ico:'📊', label:'Dashboard' },
+        { id:'mapa',      ico:'📡', label:'Mapa'       },
+      ];
+
+  document.getElementById('bottom-nav').innerHTML = tabs.map(function(t) {
+    return '<button class="nav-btn" data-tab="' + t.id
+         + '" onclick="selectTab(\'' + t.id + '\')">'
+         + '<span class="n-ico">' + t.ico + '</span>' + t.label + '</button>';
+  }).join('');
+}
+
+function selectTab(tabId) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  var screen = document.getElementById('screen-' + tabId);
+  if (screen) screen.classList.add('active');
+
+  document.querySelectorAll('#bottom-nav .nav-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
+  });
+
+  if (tabId === 'vehicle')   renderVehicle();
+  if (tabId === 'ruta')      renderRuta();
+  if (tabId === 'alertes')   renderAlertes();
+  if (tabId === 'dashboard') renderDashboard();
+
+  // Inicialitza el mapa en activar la pestanya (retard per a que el div sigui visible)
+  if (tabId === 'mapa') {
+    setTimeout(function() {
+      initMap();
+      if (mapInstance) mapInstance.invalidateSize();
+
+      var rol           = currentUser ? currentUser.rol : '';
+      var gestorPanel   = document.getElementById('gestor-map-panel');
+      var interactiuBtns = document.getElementById('interactiu-map-actions');
+
+      if (rol === 'gestor') {
+        if (gestorPanel)    gestorPanel.style.display    = 'block';
+        if (interactiuBtns) interactiuBtns.style.display = 'none';
+        setupGestorMapPanel();
+
+      } else if (rol === 'interactiu') {
+        if (gestorPanel)    gestorPanel.style.display    = 'none';
+        if (interactiuBtns) interactiuBtns.style.display = 'flex';
+        generateMapRouteInteractiu();
+
+      } else {
+        // Xofer normal: cap panell, cap botó de generar — ruta fixa automàtica
+        if (gestorPanel)    gestorPanel.style.display    = 'none';
+        if (interactiuBtns) interactiuBtns.style.display = 'none';
+        generateMapRoute();
+      }
+    }, 100);
+  }
+}
+
+// ============================================================
+// SCREEN: VEHICLE
+// ============================================================
+
+function renderVehicle() {
+  ['N1','N2'].forEach(function(t) {
+    var btn = document.getElementById('btn-' + t);
+    if (btn) btn.classList.toggle('selected', t === tipusVehicle);
+  });
+}
+
+function selectTipus(tipus) {
+  tipusVehicle = tipus;
+  renderVehicle();
+}
+
+// ============================================================
+// SCREEN: RUTA
+// ============================================================
+
+/**
+ * Calcula les distàncies reals (OSRM) de la ruta del xofer interactiu.
+ * Primera parada des de la ubicació actual; les restants des de la parada anterior.
+ * Quan acaba, crida renderRuta() per actualitzar la UI.
+ */
+async function calcularDistanciesInteractiu(rutaIds) {
+  // Indicador d'estat visible mentre calcula
+  var statusMsg = document.getElementById('route-dist-status');
+  if (statusMsg) statusMsg.textContent = '// Calculant distàncies...';
+
+  // Obté la ubicació actual del dispositiu
+  var origin = null;
+  try {
+    origin = await new Promise(function(resolve, reject) {
+      navigator.geolocation.getCurrentPosition(
+        function(pos) {
+          resolve({
+            lat:  pos.coords.latitude,
+            lng:  pos.coords.longitude,
+            name: 'Ubicació actual'
+          });
+        },
+        function() { reject(new Error('geo')); },
+        { enableHighAccuracy: true, timeout: 6000 }
+      );
+    });
+  } catch(e) {
+    // Fallback: Inca (Hub del vehicle interactiu)
+    origin = { lat: 39.7211, lng: 2.9119, name: 'Inca (Hub)' };
+  }
+
+  interactiuGeoOrigin = origin;
+  var newDistances  = {};
+  var currentPoint  = origin;
+
+  for (var i = 0; i < rutaIds.length; i++) {
+    var id     = rutaIds[i];
+    var coords = HOTEL_COORDS[id];
+    if (!coords) continue;
+
+    try {
+      var url = 'https://router.project-osrm.org/route/v1/driving/'
+        + currentPoint.lng + ',' + currentPoint.lat + ';'
+        + coords.lng + ',' + coords.lat
+        + '?overview=false&steps=false';
+      var res  = await fetch(url);
+      var data = await res.json();
+      if (data.routes && data.routes[0]) {
+        var r = data.routes[0];
+        newDistances[id] = {
+          km:       (r.distance / 1000).toFixed(1),
+          duration: Math.round(r.duration / 60)
+        };
+      }
+    } catch(e2) {
+      // Fallback: distància euclidiana aproximada (1° ≈ 111 km)
+      var dlat   = coords.lat - currentPoint.lat;
+      var dlng   = coords.lng - currentPoint.lng;
+      var distKm = Math.sqrt(dlat * dlat + dlng * dlng) * 111;
+      newDistances[id] = {
+        km:       distKm.toFixed(1),
+        duration: Math.round(distKm * 2)
+      };
+    }
+
+    // El punt de partida de la propera parada és les coordenades d'aquesta
+    currentPoint = { lat: coords.lat, lng: coords.lng };
+  }
+
+  interactiuDistances = newDistances;
+  if (statusMsg) statusMsg.textContent = '';
+
+  // Re-renderitza la ruta amb les distàncies calculades
+  renderRuta();
+}
+
+/**
+ * Renderitza la pantalla de ruta.
+ * - Si la ruta NO ha estat iniciada → mostra el botó "Iniciar Ruta"
+ * - Si ja està iniciada → mostra llista activa + secció completats + resum
+ */
+function renderRuta() {
+  // Assegura que el panell de detall és ocult i la llista visible
+  document.getElementById('ruta-list').style.display    = 'block';
+  document.getElementById('detail-panel').style.display = 'none';
+
+  if (!currentUser || (currentUser.rol !== 'xofer' && currentUser.rol !== 'interactiu')) return;
+
+  var matricula = currentUser.vehicle;
+  var estat     = rutaIniciada(matricula);
+
+  // ── Cas: ruta NO iniciada ─────────────────────────────────
+  if (!estat) {
+    var rutaDisponible = getRutaActiva();
+    var htmlNoIniciat;
+    if (currentUser.rol === 'interactiu' && !rutaDisponible.length) {
+      // Interactiu sense assignació del gestor: pantalla d'espera
+      htmlNoIniciat =
+        '<div style="text-align:center; padding:32px 16px; color:var(--text2);">'
+        + '<div style="font-size:2rem; margin-bottom:10px;">📭</div>'
+        + '<div style="font-size:1.1rem; margin-bottom:6px; color:var(--text);">Sense ruta assignada</div>'
+        + '<div style="font-size:0.9rem;">El gestor t\'assignarà la ruta del dia aviat.</div>'
+        + '</div>';
+    } else {
+      htmlNoIniciat =
+        '<button class="iniciar-btn" onclick="iniciarRuta()">▶ INICIAR RUTA</button>'
+        + '<p class="hint">Prem per carregar la ruta del dia</p>';
+    }
+    document.getElementById('ruta-list').innerHTML = htmlNoIniciat;
+    document.getElementById('ruta-resum-title').style.display = 'none';
+    document.getElementById('ruta-resum').innerHTML = '';
+    return;
+  }
+
+  // ── Cas: ruta INICIADA ────────────────────────────────────
+  var ids = getRutaActiva();
+
+  // Distàncies per interactiu: no es calculen automàticament
+  // (evita bloqueig per geolocalització). L'usuari pot recalcular amb el botó.
+
+  // Interactiu sense ruta assignada
+  if (!ids.length && currentUser.rol === 'interactiu') {
+    document.getElementById('ruta-list').innerHTML =
+      '<div style="text-align:center; padding:32px 16px; color:var(--text2);">'
+      + '<div style="font-size:2rem; margin-bottom:10px;">📭</div>'
+      + '<div style="font-size:1.1rem; margin-bottom:6px; color:var(--text);">Sense ruta assignada</div>'
+      + '<div style="font-size:0.9rem;">El gestor t\'assignarà una ruta aviat.</div>'
+      + '</div>';
+    document.getElementById('ruta-resum-title').style.display = 'none';
+    document.getElementById('ruta-resum').innerHTML = '';
+    return;
+  }
+
+  // Resol les parades de la ruta: pot incloure hotels i centres logístics
+  var rutaCompleta = ids.map(function(id) {
+    return getParadaInfo(id);
+  }).filter(Boolean);
+
+  var completats   = completatsList(matricula);               // [{id, hora}]
+  var completatIds = completats.map(function(c) { return c.id; });
+
+  // Separa: actual (primera activa), seguents (resta), fets (completades)
+  // Centres i hotels es marquen com a visitats de la mateixa manera
+  var actius   = rutaCompleta.filter(function(h) {
+    return completatIds.indexOf(h.id) === -1;
+  });
+  var actual   = actius.length > 0 ? actius[0]    : null;
+  var seguents = actius.length > 1 ? actius.slice(1) : [];
+
+  var fets = completats
+    .map(function(c) {
+      var h = HOTELS.find(function(x) { return x.id === c.id; });
+      return h ? { hotel: h, hora: c.hora } : null;
+    })
+    .filter(Boolean)
+    .sort(function(a, b) { return a.hora.localeCompare(b.hora); });
+
+  var html     = '';
+  var horaBase = estat.hora;
+
+  // Indicador ruta activa
+  html += '<div class="ruta-activa">🟢 Ruta activa · iniciada a les ' + horaBase + '</div>';
+
+  // Botó de recàlcul de distàncies (només per a interactiu)
+  if (currentUser.rol === 'interactiu') {
+    html += '<button id="recalc-dist-btn" type="button" class="btn btn-secondary"'
+          + ' style="width:100%; margin-bottom:6px; font-size:0.9rem; padding:8px;">'
+          + '🔄 Recalcular distàncies des d\'ubicació actual</button>'
+          + '<p id="route-dist-status" style="font-size:0.82rem; color:var(--text2);'
+          + ' text-align:center; margin-bottom:8px;"></p>';
+  }
+
+  // ── Bloc d'actius (overflow:visible perquè scale no quedi tallat) ──
+  html += '<div class="card fade-in" style="padding:10px 14px; overflow:visible; position:relative;">';
+
+  if (!actual) {
+    // Tots completats
+    html += '<p style="text-align:center; color:var(--done); padding:12px 0; font-weight:700;">🎉 Tots els hotels completats!</p>';
+  } else {
+
+    // ── PARADA ACTUAL (remarcada) ───────────────────────────
+    if (actual.centre) {
+      // Parada de centre logístic (descàrrega obligatòria)
+      html += '<div class="route-item current" id="route-item-current"'
+           +   ' style="border-color:rgba(40,183,255,.6);'
+           +   ' background:linear-gradient(135deg,rgba(40,183,255,.12),rgba(30,97,255,.06));">'
+           +   '<div class="route-num" style="color:var(--cyan); border-color:rgba(40,183,255,.45);">🏭</div>'
+           +   '<div class="route-info">'
+           +     '<div class="current-label">▶ ARA</div>'
+           +     '<div style="font-size:10px; color:var(--cyan); letter-spacing:.1em; margin-bottom:2px;">'
+           +       '// DESCÀRREGA OBLIGATÒRIA</div>'
+           +     '<div class="route-nom">' + (actual.nom || actual.name || actual.id) + '</div>'
+           +     '<div class="route-meta" style="color:var(--text2);">Punt de descàrrega · Reabastiment</div>'
+           +   '</div>'
+           +   '<button class="btn btn-secondary" style="flex-shrink:0; padding:6px 10px; font-size:0.82rem;"'
+           +     ' onclick="marcarCompletat(\'' + actual.id + '\')">Descarregar ✓</button>'
+           + '</div>';
+    } else {
+      var etaActual   = calcularETAParada(actius.filter(function(a) { return !a.centre; }), 0, horaBase);
+      var badgeActual = actual.moll_ocupat
+        ? '<span class="badge badge-eta-alert-pulse">⚠ ' + etaActual + '</span>'
+        : '<span class="badge badge-eta-current">' + etaActual + '</span>';
+
+      var carrosActual = getCarrosPerHotel(actual.id);
+      var distActual   = interactiuDistances[actual.id];
+      var metaActual   = carrosActual + ' carros · '
+        + (distActual
+            ? distActual.km + ' km (~' + distActual.duration + ' min)'
+            : (actual.km || '?') + ' km');
+
+      html += '<div class="route-item current" id="route-item-current"'
+           +       ' onclick="showDetail(\'' + actual.id + '\')">'
+           +   '<div class="route-num" style="color:var(--cyan); border-color:rgba(40,183,255,.45);">1</div>'
+           +   '<div class="route-info">'
+           +     '<div class="current-label">▶ ARA</div>'
+           +     '<div class="route-nom">' + actual.nom + '</div>'
+           +     '<div class="route-meta">' + metaActual + '</div>'
+           +   '</div>'
+           +   '<div style="flex-shrink:0;">' + badgeActual + '</div>'
+           + '</div>';
+    }
+
+    // ── DIVISOR + PARADES SEGÜENTS (si n'hi ha) ─────────────
+    if (seguents.length > 0) {
+      html += '<div class="next-divider"><span>— SEGÜENTS —</span></div>';
+      html += seguents.map(function(hotel, i) {
+        var idxInActius = i + 1; // actius[0] és l'actual, seguents comença a [1]
+        if (hotel.centre) {
+          // Centre logístic a la secció de seguents
+          return '<div class="route-item seguent"'
+               +   ' style="border-color:rgba(40,183,255,.4);'
+               +   ' background:rgba(40,183,255,.06); opacity:1;">'
+               +   '<div class="route-num" style="color:var(--cyan); border-color:rgba(40,183,255,.35);">🏭</div>'
+               +   '<div class="route-info">'
+               +     '<div style="font-size:10px; color:var(--cyan); letter-spacing:.1em; margin-bottom:2px;">'
+               +       '// DESCÀRREGA OBLIGATÒRIA</div>'
+               +     '<div class="route-nom">' + (hotel.nom || hotel.name || hotel.id) + '</div>'
+               +     '<div class="route-meta" style="color:var(--text2);">Punt de descàrrega · Reabastiment</div>'
+               +   '</div>'
+               +   '<span class="badge" style="background:rgba(40,183,255,.2); color:var(--cyan);'
+               +     ' border:1px solid rgba(40,183,255,.4); flex-shrink:0;">🏭</span>'
+               + '</div>';
+        }
+
+        var carrosSeg = getCarrosPerHotel(hotel.id);
+        var distSeg   = interactiuDistances[hotel.id];
+        var metaSeg   = carrosSeg + ' carros · '
+          + (distSeg
+              ? distSeg.km + ' km (~' + distSeg.duration + ' min)'
+              : (hotel.km || '?') + ' km');
+
+        var eta   = calcularETAParada(actius.filter(function(a) { return !a.centre; }), Math.max(0, idxInActius - 1), horaBase);
+        var badge = hotel.moll_ocupat
+          ? '<span class="badge badge-eta-alert">⚠ ' + eta + '</span>'
+          : '<span class="badge badge-eta">' + eta + '</span>';
+
+        return '<div class="route-item seguent" onclick="showDetail(\'' + hotel.id + '\')">'
+             +   '<div class="route-num">' + (idxInActius + 1) + '</div>'
+             +   '<div class="route-info">'
+             +     '<div class="route-nom">' + hotel.nom + '</div>'
+             +     '<div class="route-meta">' + metaSeg + '</div>'
+             +   '</div>'
+             +   '<div style="flex-shrink:0;">' + badge + '</div>'
+             + '</div>';
+      }).join('');
+    }
+  }
+
+  // ── Tornada al hub (última parada, dins el card actius) ─────
+  if (currentUser.rol === 'interactiu') {
+    var hubKey  = currentUser.hub || 'inca';
+    var hubData = CENTRES[hubKey] || CENTRES['inca'];
+    var hubNom  = hubData ? hubData.nom : 'Hub';
+    html +=
+      '<div class="route-item seguent" style="border-color:rgba(40,183,255,.35);'
+      +   ' background:rgba(40,183,255,.05); cursor:default;">'
+      +   '<div class="route-num" style="color:var(--cyan); border-color:rgba(40,183,255,.35);">🏠</div>'
+      +   '<div class="route-info">'
+      +     '<div style="font-size:10px; color:var(--cyan); letter-spacing:.1em; margin-bottom:2px;">'
+      +       '// TORNADA</div>'
+      +     '<div class="route-nom">' + hubNom + '</div>'
+      +     '<div class="route-meta" style="color:var(--text2);">Fi de ruta · Retorn al hub</div>'
+      +   '</div>'
+      +   '<span class="badge" style="background:rgba(40,183,255,.15); color:var(--cyan);'
+      +     ' border:1px solid rgba(40,183,255,.35); flex-shrink:0;">🏠</span>'
+      + '</div>';
+  }
+
+  html += '</div>'; // tanca card actius
+
+  // ── Secció COMPLETAT (si n'hi ha) ───────────────────────────
+  if (fets.length > 0) {
+    html += '<div class="completed-divider"><span>— COMPLETAT —</span></div>';
+    html += '<div class="card" style="padding:10px 14px;">';
+    html += fets.map(function(entry) {
+      return '<div class="route-item done" style="cursor:default;">'
+           +   '<div class="route-num" style="color:var(--done); border-color:rgba(38,217,128,.3);">✓</div>'
+           +   '<div class="route-info">'
+           +     '<div class="route-nom">' + entry.hotel.nom + '</div>'
+           +     '<div class="route-meta">' + entry.hotel.carros + ' carros</div>'
+           +   '</div>'
+           +   '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">'
+           +     '<span class="badge badge-done">✓ ' + entry.hora + '</span>'
+           +     '<button class="btn-desfer" onclick="desferCompletat(\'' + entry.hotel.id + '\')">↩ Desfer</button>'
+           +   '</div>'
+           + '</div>';
+    }).join('');
+    html += '</div>';
+  }
+
+  document.getElementById('ruta-list').innerHTML = html;
+
+  // Listener del botó de recàlcul de distàncies (interactiu)
+  var recalcBtn = document.getElementById('recalc-dist-btn');
+  if (recalcBtn) {
+    recalcBtn.addEventListener('click', function() {
+      if (!currentUser || currentUser.rol !== 'interactiu') return;
+      interactiuDistances = {};
+      calcularDistanciesInteractiu(getRutaActiva());
+    });
+  }
+
+  // ── Animació d'entrada per a la nova parada actual ──────────
+  // Només s'activa quan la parada actual CANVIA (no en el primer render)
+  setTimeout(function() {
+    var el = document.getElementById('route-item-current');
+    if (el && actual) {
+      if (lastCurrentHotelId !== null && lastCurrentHotelId !== actual.id) {
+        el.classList.add('incoming');
+        el.addEventListener('animationend', function() {
+          el.classList.remove('incoming');
+        }, { once: true });
+      }
+      lastCurrentHotelId = actual.id;
+    }
+  }, 50);
+
+  // Resum (basant-se en la ruta completa)
+  var kmTotal     = rutaCompleta.reduce(function(a, h) { return a + h.km; }, 0);
+  var carrosTotal = rutaCompleta.reduce(function(a, h) { return a + h.carros; }, 0);
+  var co2Total    = (kmTotal * CO2_FACTORS[tipusVehicle]).toFixed(1);
+
+  document.getElementById('ruta-resum-title').style.display = 'block';
+  document.getElementById('ruta-resum').innerHTML =
+    '<div class="resum-item"><div class="resum-val">' + kmTotal + '</div><div class="resum-label">Km totals</div></div>'
+  + '<div class="resum-item"><div class="resum-val">' + actius.length + '/' + rutaCompleta.length + '</div><div class="resum-label">Pendents</div></div>'
+  + '<div class="resum-item"><div class="resum-val">' + carrosTotal + '</div><div class="resum-label">Carros</div></div>'
+  + '<div class="resum-item"><div class="resum-val">' + co2Total + '</div><div class="resum-label">kg CO₂</div></div>';
+}
+
+/** Inicia la ruta: guarda l'hora i re-renderitza */
+function iniciarRuta() {
+  if (!currentUser || !currentUser.vehicle) return;
+  guardarRutaIniciada(currentUser.vehicle, nowHora());
+  renderRuta();
+}
+
+/** Marca un hotel com a completat */
+function marcarCompletat(hotelId) {
+  if (!currentUser || !currentUser.vehicle || !hotelId) return;
+
+  var matricula = currentUser.vehicle;
+  var llista    = completatsList(matricula);
+
+  // Evita duplicats
+  if (llista.some(function(c) { return c.id === hotelId; })) return;
+
+  llista.push({ id: hotelId, hora: nowHora() });
+  guardarCompletats(matricula, llista);
+
+  closeDetail();
+  renderRuta();
+  mostrarToast('Hotel completat ✓');
+}
+
+/** Desfà la compleció d'un hotel */
+function desferCompletat(hotelId) {
+  if (!currentUser || !currentUser.vehicle) return;
+
+  var matricula = currentUser.vehicle;
+  var llista    = completatsList(matricula).filter(function(c) { return c.id !== hotelId; });
+  guardarCompletats(matricula, llista);
+
+  renderRuta();
+  mostrarToast('Hotel recuperat ✓');
+}
+
+// ============================================================
+// PANELL DE DETALL
+// ============================================================
+
+var ZONA_MAP = {
+  nord:      'Nord (Alcúdia / Can Picafort)',
+  palma:     "Palma / s'Arenal",
+  palmanova: 'Palmanova / Magaluf',
+  peguera:   'Peguera',
+  est:       "Est (Cala Ratjada / Cala d'Or)"
+};
+
+function showDetail(hotelId) {
+  var hotel = HOTELS.find(function(h) { return h.id === hotelId; });
+  if (!hotel) return;
+
+  currentDetailHotelId = hotelId;
+
+  var co2 = (hotel.km * CO2_FACTORS[tipusVehicle]).toFixed(2);
+
+  document.getElementById('det-nom').textContent    = hotel.nom;
+  document.getElementById('det-zona').textContent   = ZONA_MAP[hotel.zona] || hotel.zona;
+  document.getElementById('det-hub').textContent    = hotel.zona === 'nord' ? 'Inca (Hub)' : 'Son Castelló';
+  document.getElementById('det-carros').textContent = getCarrosPerHotel(hotel.id) + ' carros';
+  document.getElementById('det-km').textContent     = hotel.km + ' km';
+  document.getElementById('det-co2').textContent    = co2 + ' kg CO₂';
+
+  // Estat moll
+  var mollEl   = document.getElementById('det-moll');
+  var externEl = document.getElementById('det-extern');
+  if (hotel.moll_ocupat) {
+    mollEl.innerHTML        = '<span class="badge badge-alert">Ocupat fins les ' + hotel.fins + 'h</span>';
+    externEl.style.display  = 'block';
+    externEl.innerHTML      = '<strong>' + hotel.vehicle_extern + '</strong>'
+      + ' al moll des de les ' + hotel.hora_extern + 'h fins les ' + hotel.fins + 'h aprox.';
+  } else {
+    mollEl.innerHTML        = '<span class="badge badge-ok">Lliure ✓</span>';
+    externEl.style.display  = 'none';
+  }
+
+  document.getElementById('det-badge-cap').innerHTML = hotel.moll_ocupat
+    ? '<span class="badge badge-alert">⚠</span>'
+    : '<span class="badge badge-ok">✓</span>';
+
+  // Botó completar: visible per al xofer i interactiu, ocult per al gestor
+  var btnCompletar = document.getElementById('btn-completar');
+  if (currentUser && (currentUser.rol === 'xofer' || currentUser.rol === 'interactiu') && currentUser.vehicle) {
+    var jaCompletat = completatsList(currentUser.vehicle).some(function(c) { return c.id === hotelId; });
+    btnCompletar.style.display = 'flex';
+    btnCompletar.disabled      = jaCompletat;
+    btnCompletar.textContent   = jaCompletat ? '✓ Ja completat' : '✓ Marcar com a completat';
+  } else {
+    btnCompletar.style.display = 'none';
+  }
+
+  // Renderitza notes
+  renderNotes(hotelId);
+
+  // Neteja el textarea
+  document.getElementById('inp-nota').value = '';
+
+  // Mostra detall, amaga llista
+  document.getElementById('ruta-list').style.display    = 'none';
+  document.getElementById('ruta-resum-title').style.display = 'none';
+  document.getElementById('ruta-resum').innerHTML       = '';
+  document.getElementById('detail-panel').style.display = 'block';
+}
+
+function closeDetail() {
+  currentDetailHotelId = null;
+  document.getElementById('detail-panel').style.display = 'none';
+  document.getElementById('ruta-list').style.display    = 'block';
+  renderRuta();  // Re-renderitza per mostrar el resum actualitzat
+}
+
+// ============================================================
+// NOTES
+// ============================================================
+
+/** Renderitza les notes existents d'un hotel (amb botons editar/borrar) */
+function renderNotes(hotelId) {
+  var notes = getNotes(hotelId);
+  var cont  = document.getElementById('notes-list');
+
+  if (!notes.length) {
+    cont.innerHTML = '<p style="font-size:12px; color:var(--text2); margin-bottom:10px;">Cap nota registrada.</p>';
+    return;
+  }
+
+  cont.innerHTML = notes.map(function(n, idx) {
+    // Botons d'acció: ✏ editar in-place · 🗑 borrar amb confirm()
+    return '<div class="note-card" id="note-card-' + idx + '">'
+         +   '<div class="note-actions">'
+         +     '<button class="btn-note-action btn-note-edit"'
+         +       ' onclick="editarNota(\'' + hotelId + '\',' + idx + ')">✏</button>'
+         +     '<button class="btn-note-action btn-note-delete"'
+         +       ' onclick="borrarNota(\'' + hotelId + '\',' + idx + ')">🗑</button>'
+         +   '</div>'
+         +   '<div class="note-text" id="note-text-' + idx + '">' + escapeHtml(n.text) + '</div>'
+         +   '<div class="note-meta" id="note-meta-' + idx + '">' + n.autor + ' · ' + n.hora + '</div>'
+         + '</div>';
+  }).join('');
+}
+
+// ── Edició in-place de notes ─────────────────────────────
+
+/** Activa l'edició in-place de la nota `idx` */
+function editarNota(hotelId, idx) {
+  var notes   = getNotes(hotelId);
+  if (idx >= notes.length) return;
+
+  var card    = document.getElementById('note-card-' + idx);
+  var textDiv = document.getElementById('note-text-' + idx);
+  var actions = card.querySelector('.note-actions');
+
+  // Crea un textarea amb el text actual
+  var ta  = document.createElement('textarea');
+  ta.className = 'note-edit-input';
+  ta.id        = 'note-edit-' + idx;
+  ta.value     = notes[idx].text;
+
+  textDiv.style.display = 'none';
+  card.insertBefore(ta, document.getElementById('note-meta-' + idx));
+
+  // Canvia els botons a Desar / Cancel·lar
+  actions.innerHTML =
+    '<button class="btn-note-action btn-note-save" onclick="desarEditNota(\'' + hotelId + '\',' + idx + ')">✓</button>'
+  + '<button class="btn-note-action btn-note-cancel" onclick="cancelEditNota(\'' + hotelId + '\',' + idx + ')">✕</button>';
+
+  ta.focus();
+}
+
+/** Desa el text editat in-place */
+function desarEditNota(hotelId, idx) {
+  var notes = getNotes(hotelId);
+  var ta    = document.getElementById('note-edit-' + idx);
+  if (!ta) return;
+
+  var text = ta.value.trim();
+  if (!text) return;
+
+  notes[idx].text = text;
+  guardarNotes(hotelId, notes);
+  renderNotes(hotelId);
+  mostrarToast('Nota actualitzada ✓');
+}
+
+/** Cancel·la l'edició sense desar cap canvi */
+function cancelEditNota(hotelId, idx) {
+  renderNotes(hotelId);
+}
+
+/** Borra una nota amb confirmació prèvia */
+function borrarNota(hotelId, idx) {
+  if (!confirm('Eliminar aquesta nota?')) return;
+  var notes = getNotes(hotelId);
+  notes.splice(idx, 1);
+  guardarNotes(hotelId, notes);
+  renderNotes(hotelId);
+  mostrarToast('Nota eliminada');
+}
+
+// ── Auto-save notes (debounce 800ms) ────────────────────
+
+var autoSaveTimer = null;
+
+/** Configura el camp de nota nova per auto-desar 800ms després d'aturar l'escriptura */
+function setupNotaDebounce() {
+  var ta = document.getElementById('inp-nota');
+  if (!ta) return;
+
+  ta.addEventListener('input', function() {
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(function() {
+      if (!currentDetailHotelId || !currentUser) return;
+      var text = ta.value.trim();
+      if (!text) return;
+
+      // Desa la nota i neteja el camp
+      var notes = getNotes(currentDetailHotelId);
+      notes.push({ text: text, autor: currentUser.user, hora: nowHora() });
+      guardarNotes(currentDetailHotelId, notes);
+      renderNotes(currentDetailHotelId);
+      ta.value = '';
+
+      // Indicador "Desat ✓" durant 1.5s
+      var ind = document.getElementById('autosave-indicator');
+      if (ind) {
+        ind.classList.add('visible');
+        setTimeout(function() { ind.classList.remove('visible'); }, 1500);
+      }
+    }, 800);
+  });
+}
+
+/** Escapa HTML per evitar injeccions al mostrar notes */
+function escapeHtml(str) {
+  return str
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+// ============================================================
+// SCREEN: ALERTES
+// ============================================================
+
+function horaRecomanada(hora) {
+  var parts = hora.split(':');
+  var total = parseInt(parts[0]) * 60 + parseInt(parts[1]) - 50;
+  var h = Math.floor(total / 60);
+  var m = total % 60;
+  return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+}
+
+function renderAlertes() {
+  var cont = document.getElementById('alertes-content');
+  var html = '';
+
+  // Obté les parades ja completades (filtrem les seves alertes)
+  var completatIds = [];
+  if (currentUser && currentUser.vehicle) {
+    completatIds = completatsList(currentUser.vehicle).map(function(c) { return c.id; });
+  }
+
+  // Construeix la llista d'hotels ACTIUS de la ruta (no completats)
+  var ids         = getRutaActiva();
+  var hotelsActius = ids
+    .map(function(id) { return HOTELS.find(function(h) { return h.id === id; }); })
+    .filter(function(h) { return h && completatIds.indexOf(h.id) === -1; });
+
+  // ── Alertes de moll ocupat (parades actives) ─────────────────
+  hotelsActius
+    .filter(function(h) { return h.moll_ocupat; })
+    .forEach(function(hotel) {
+      html += '<div class="alert-card warning">'
+            +   '<div class="ac-head">⚠️ ' + hotel.nom + ' — ' + hotel.vehicle_extern + '</div>'
+            +   '<div class="ac-body">Moll ocupat · Recomanam avançar la visita</div>'
+            + '</div>';
+    });
+
+  // ── Notes dels hotels actius (card blava per nota) ────────────
+  hotelsActius.forEach(function(hotel) {
+    var notes = getNotes(hotel.id);
+    notes.forEach(function(n) {
+      html += '<div class="alert-card note">'
+            +   '<div class="ac-head">📝 ' + hotel.nom + '</div>'
+            +   '<div class="ac-body">'
+            +     '"' + escapeHtml(n.text) + '"<br>'
+            +     '<small style="color:var(--text2);">— ' + n.autor + ' · ' + n.hora + '</small>'
+            +   '</div>'
+            + '</div>';
+    });
+  });
+
+  // ── Sense alertes actives ────────────────────────────────────
+  if (!html) {
+    html = '<div class="no-alertes">✅<br><br>Cap alerta activa<br>per a les parades pendents</div>';
+  }
+
+  cont.innerHTML = html;
+}
+
+// ============================================================
+// SCREEN: DASHBOARD (gestor)
+// ============================================================
+
+function renderDashboard() {
+  var alertesBase  = HOTELS.filter(function(h) { return h.moll_ocupat; });
+  var totalAlertes = alertesBase.length + simulatedAlerts.length;
+  var alertColor   = totalAlertes > 0 ? 'var(--alert)' : 'var(--ok)';
+
+  var html = '';
+
+  // ─── Comptadors ──────────────────────────────────────────
+  html += '<div class="counters-grid">'
+        + '<div class="counter-card"><div class="counter-val">357</div><div class="counter-label">Km totals</div></div>'
+        + '<div class="counter-card"><div class="counter-val" style="color:var(--ok);">193 ↓</div><div class="counter-label">CO₂ estalviat (kg)</div></div>'
+        + '<div class="counter-card"><div class="counter-val" style="color:' + alertColor + ';">' + totalAlertes + '</div><div class="counter-label">Alertes</div></div>'
+        + '</div>';
+
+  // ─── Vehicles amb barra de progrés ───────────────────────
+  html += '<div class="sec-title">Vehicles actius</div>';
+  html += '<div class="card" style="padding:8px 14px;">';
+  html += VEHICLES.map(function(v) {
+    var bc = v.estat === 'alerta' ? 'badge-alert' : 'badge-ok';
+    var bt = v.estat === 'alerta' ? '⚠ Alerta'   : '✓ OK';
+
+    // Progrés: intenta llegir localStorage; fallback a PROGRESS_SIMULAT
+    var llista      = completatsList(v.matricula);
+    var nCompletats = llista.length > 0 ? llista.length : (PROGRESS_SIMULAT[v.matricula] || 0);
+    var nTotal      = (RUTES[v.tipus] || []).length;
+    var pct         = nTotal > 0 ? Math.round((nCompletats / nTotal) * 100) : 0;
+
+    var barColor = pct > 66 ? 'var(--ok)' : pct > 33 ? 'var(--alert)' : 'var(--danger)';
+
+    return '<div class="vehicle-row">'
+         +   '<div class="v-badge">' + v.tipus + '</div>'
+         +   '<div class="v-info">'
+         +     '<div class="v-mat">' + v.matricula + '</div>'
+         +     '<div class="v-xofer">' + v.xofer + ' · ' + v.hub + '</div>'
+         +     '<div class="v-hotel">📍 ' + v.hotel_actual + ' · ' + v.km + ' km</div>'
+         +     '<div class="progress-bar-wrap">'
+         +       '<div class="progress-bar-fill" style="width:' + pct + '%; background:' + barColor + ';"></div>'
+         +     '</div>'
+         +     '<div class="progress-text">' + nCompletats + '/' + nTotal + ' hotels · ' + pct + '%</div>'
+         +   '</div>'
+         +   '<span class="badge ' + bc + '" style="flex-shrink:0; margin-top:2px;">' + bt + '</span>'
+         + '</div>';
+  }).join('');
+  html += '</div>';
+
+  // ─── Alertes actives ─────────────────────────────────────
+  html += '<div class="sec-title mt">Alertes actives</div>';
+
+  alertesBase.forEach(function(hotel) {
+    var rec = horaRecomanada(hotel.hora_extern);
+    html += '<div class="alert-card warning">'
+          +   '<div class="ac-head">⚠️ ' + hotel.hora_extern + 'h — ' + hotel.nom + '</div>'
+          +   '<div class="ac-body">'
+          +     hotel.vehicle_extern + ' al moll fins les ' + hotel.fins + 'h<br>'
+          +     '<strong style="color:var(--text);">Recomanació: arribar a les ' + rec + 'h</strong>'
+          +   '</div>'
+          + '</div>';
+  });
+
+  simulatedAlerts.forEach(function(a) {
+    html += '<div class="alert-card warning">'
+          +   '<div class="ac-head">⚠️ ' + a.hora + ' — ' + a.lloc + '</div>'
+          +   '<div class="ac-body">' + a.descripcio + '</div>'
+          + '</div>';
+  });
+
+  if (!totalAlertes) {
+    html += '<div class="alert-card success">'
+          +   '<div class="ac-head">✅ Sense alertes</div>'
+          +   '<div class="ac-body">Tots els vehicles operen amb normalitat.</div>'
+          + '</div>';
+  }
+
+  html += '<button class="btn btn-warn mt" onclick="simularAlerta()">⚡ Simular nova alerta</button>';
+
+  document.getElementById('dashboard-content').innerHTML = html;
+
+  // Afegeix el panel de l'interactiu i registra el listener del botó reset
+  renderInteractiuPanel();
+}
+
+/**
+ * Renderitza el panel de control del Xofer Interactiu al dashboard del gestor
+ */
+function renderInteractiuPanel() {
+  var cont = document.getElementById('dashboard-content');
+  if (!cont) return;
+
+  // Afegeix el panel al final del dashboard (si no existeix ja)
+  if (!document.getElementById('gestor-interactiu-panel')) {
+    var div = document.createElement('div');
+    div.id = 'gestor-interactiu-panel';
+    div.style.marginTop = '20px';
+    cont.appendChild(div);
+  }
+
+  var panelEl = document.getElementById('gestor-interactiu-panel');
+  panelEl.innerHTML =
+    '<p style="color:var(--cyan); font-size:11px; font-weight:700;'
+    + ' letter-spacing:.08em; text-transform:uppercase; margin-bottom:10px;">'
+    + '// XOFER INTERACTIU</p>'
+
+    + '<div style="border:1px solid rgba(43,126,255,.3); border-radius:12px;'
+    + ' background:rgba(11,21,48,.5); padding:14px; margin-bottom:10px;">'
+    +   '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">'
+    +     '<div>'
+    +       '<div style="font-size:1rem; font-weight:600;">🔄 Interactiu · 3421-MLL</div>'
+    +       '<div id="interactiu-status" style="font-size:0.85rem; color:var(--text2); margin-top:3px;">'
+    +         'Sense ruta assignada'
+    +       '</div>'
+    +     '</div>'
+    +     '<span id="interactiu-progress-badge" class="badge badge-ok"'
+    +       ' style="display:none;">0/0</span>'
+    +   '</div>'
+    +   '<div id="interactiu-progress-bar-wrap" class="progress-bar-wrap" style="display:none;">'
+    +     '<div id="interactiu-progress-bar" class="progress-bar-fill" style="width:0%;"></div>'
+    +   '</div>'
+    + '</div>'
+
+    + '<button id="reset-interactiu-btn" class="btn btn-warn" type="button">'
+    + '🗑 Reseteja ruta Interactiu</button>';
+
+  // Actualitza l'estat actual
+  updateInteractiuStatus();
+
+  // Listener del botó reset (re-registra cada vegada que es renderitza)
+  var resetBtn = document.getElementById('reset-interactiu-btn');
+  if (resetBtn) {
+    resetBtn.onclick = function() {
+      localStorage.removeItem('polarroute_ruta_iniciada_3421-MLL');
+      localStorage.removeItem('polarroute_completats_3421-MLL');
+      localStorage.removeItem('polarroute_ruta_assignada_interactiu');
+      localStorage.removeItem('polarroute_carros_interactiu');
+      updateInteractiuStatus();
+      resetBtn.textContent = '✓ Ruta resetejada';
+      resetBtn.style.color = 'var(--ok)';
+      setTimeout(function() {
+        resetBtn.textContent = '🗑 Reseteja ruta Interactiu';
+        resetBtn.style.color = '';
+      }, 2000);
+    };
+  }
+}
+
+/**
+ * Actualitza el badge de progrés i la barra del panel Interactiu
+ */
+function updateInteractiuStatus() {
+  var statusEl = document.getElementById('interactiu-status');
+  var badgeEl  = document.getElementById('interactiu-progress-badge');
+  var barWrap  = document.getElementById('interactiu-progress-bar-wrap');
+  var barFill  = document.getElementById('interactiu-progress-bar');
+  if (!statusEl) return;
+
+  var rutaAssignada = null;
+  try {
+    rutaAssignada = JSON.parse(
+      localStorage.getItem('polarroute_ruta_assignada_interactiu') || 'null'
+    );
+  } catch(e) {}
+
+  var completats = [];
+  try {
+    completats = JSON.parse(
+      localStorage.getItem('polarroute_completats_3421-MLL') || '[]'
+    );
+  } catch(e) {}
+
+  if (!rutaAssignada || !rutaAssignada.length) {
+    statusEl.textContent   = 'Sense ruta assignada';
+    badgeEl.style.display  = 'none';
+    barWrap.style.display  = 'none';
+    return;
+  }
+
+  var total = rutaAssignada.length;
+  var done  = completats.length;
+  var pct   = Math.round((done / total) * 100);
+
+  statusEl.textContent    = 'Ruta activa · ' + total + ' parades assignades';
+  badgeEl.style.display   = 'inline-block';
+  badgeEl.textContent     = done + '/' + total;
+  barWrap.style.display   = 'block';
+  barFill.style.width     = pct + '%';
+  barFill.style.background = pct >= 66 ? 'var(--ok)' : pct >= 33 ? 'var(--alert)' : 'var(--danger)';
+}
+
+function simularAlerta() {
+  simulatedAlerts.push({
+    hora:      '14:30',
+    lloc:      'Eden Alcúdia',
+    descripcio:'Obres d\'accés bloquegen el moll. Accés alternatiu pel carrer lateral.'
+  });
+  renderDashboard();
+}
+
+// ============================================================
+// MAPA — Leaflet + OSRM routing
+// ============================================================
+
+// Coordenades dels hotels de PolarRoute (WGS84)
+const HOTEL_COORDS = {
+  'balanguera':     { lat: 39.5158, lng: 2.7472 },
+  'bermudas':       { lat: 39.5388, lng: 2.7175 },
+  'lido-park':      { lat: 39.5353, lng: 2.4486 },
+  'cala-ratjada':   { lat: 39.7098, lng: 3.4596 },
+  'bahia-este':     { lat: 39.5961, lng: 3.3849 },
+  'bella-paguera':  { lat: 39.5353, lng: 2.4486 },
+  'eden-alcudia':   { lat: 39.8465, lng: 3.1243 },
+  'eden-playa':     { lat: 39.8430, lng: 3.1180 },
+  'lago-aptos':     { lat: 39.8501, lng: 3.1201 },
+  'lago-playa':     { lat: 39.8490, lng: 3.1215 },
+  'bordoy-bay':     { lat: 39.8521, lng: 3.1267 },
+  'orquidea':       { lat: 39.8380, lng: 3.1050 },
+  'mar-blau-nord':  { lat: 39.8350, lng: 3.1020 },
+  'elisa':          { lat: 39.8410, lng: 3.1100 },
+  'gran-fiesta':    { lat: 39.5120, lng: 2.7510 },
+  'whala-beach':    { lat: 39.5050, lng: 2.7620 },
+  'tent-arenal':    { lat: 39.4991, lng: 2.7543 },
+  'tent-bahia':     { lat: 39.5100, lng: 2.7480 },
+  'soul-palma':     { lat: 39.5721, lng: 2.6509 },
+  'negresco':       { lat: 39.5200, lng: 2.7400 },
+  'martinique':     { lat: 39.5242, lng: 2.5373 },
+  'tent-palmanova': { lat: 39.5260, lng: 2.5310 },
+  'torrenova':      { lat: 39.5280, lng: 2.5290 },
+};
+
+// Centres logístics (hubs)
+const CENTRES = {
+  'son-castello': { id: 'son-castello', lat: 39.6118, lng: 2.6752, nom: 'Son Castelló' },
+  'inca':         { id: 'inca',         lat: 39.7211, lng: 2.9119, nom: 'Inca (Hub)'   },
+};
+
+const ECO_TIME_TOLERANCE = 0.15;   // 15% de temps extra acceptable per la ruta eco
+const segmentCache = new Map();     // Caché de segments OSRM per no repetir peticions
+
+// ── Estat del mapa ──────────────────────────────────────────
+var mapInstance        = null;
+var mapInitialized     = false;
+var mapRouteLayer      = null;
+var mapMarkersLayer    = [];
+var mapOrigin          = null;
+var mapLastRoutePoints = [];
+var mapLastStops       = [];
+
+// Distàncies OSRM per a la ruta de l'interactiu (caché per sessió)
+var interactiuDistances  = {};  // { hotelId: { km, duration } }
+var interactiuGeoOrigin  = null;
+
+// ── Inicialització de Leaflet ───────────────────────────────
+
+function initMap() {
+  if (mapInitialized) return;
+
+  // Comprova que Leaflet s'ha carregat correctament
+  if (typeof L === 'undefined') {
+    document.getElementById('map-status').textContent =
+      '// Error: Leaflet no disponible. Comprova connexió.';
+    return;
+  }
+
+  // Crea la instància centrada a Mallorca
+  mapInstance = L.map('map-container').setView([39.65, 2.95], 10);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(mapInstance);
+  mapInitialized = true;
+
+  var statusEl = document.getElementById('map-status');
+  statusEl.textContent = '// Detectant ubicació actual...';
+
+  // Desactiva el botó de generar del gestor fins que l'origen estigui llest
+  var buildBtn = document.getElementById('gestor-map-build-btn');
+  if (buildBtn) buildBtn.disabled = true;
+
+  function onGeoSuccess(pos) {
+    mapOrigin = {
+      lat:  pos.coords.latitude,
+      lng:  pos.coords.longitude,
+      nom:  'Ubicació actual',
+      name: 'Ubicació actual'
+    };
+    mapInstance.setView([mapOrigin.lat, mapOrigin.lng], 11);
+
+    // Marcador d'origen sempre visible
+    if (window._originMarker) mapInstance.removeLayer(window._originMarker);
+    window._originMarker = L.marker([mapOrigin.lat, mapOrigin.lng])
+      .addTo(mapInstance)
+      .bindPopup('📍 Ubicació actual (origen)');
+
+    statusEl.textContent = '// Ubicació detectada · Llest per generar ruta';
+    if (buildBtn) buildBtn.disabled = false;
+  }
+
+  function onGeoError() {
+    // Fallback explícit a Son Castelló
+    mapOrigin = {
+      lat:  39.6118,
+      lng:  2.6752,
+      nom:  'Son Castelló (origen per defecte)',
+      name: 'Son Castelló (origen per defecte)'
+    };
+    if (window._originMarker) mapInstance.removeLayer(window._originMarker);
+    window._originMarker = L.marker([mapOrigin.lat, mapOrigin.lng])
+      .addTo(mapInstance)
+      .bindPopup('🏭 Son Castelló (geolocalització no disponible)');
+
+    statusEl.textContent = '// ⚠️ Geolocalització no disponible · Origen: Son Castelló';
+    if (buildBtn) buildBtn.disabled = false;
+  }
+
+  if ('geolocation' in navigator) {
+    navigator.geolocation.getCurrentPosition(onGeoSuccess, onGeoError, {
+      enableHighAccuracy: true,
+      timeout: 8000,
+      maximumAge: 0
+    });
+  } else {
+    onGeoError();
+  }
+}
+
+// ── OSRM helpers ────────────────────────────────────────────
+
+/**
+ * Demana rutes alternatives a OSRM per a un segment (amb caché).
+ * Retorna { fastest, eco, saved_km, saved_pct } per poder calcular l'estalvi eco.
+ */
+async function fetchSegmentAlternatives(from, to) {
+  var key = from.lat + ',' + from.lng + '|' + to.lat + ',' + to.lng;
+  if (segmentCache.has(key)) return segmentCache.get(key);
+
+  var url = 'https://router.project-osrm.org/route/v1/driving/'
+    + from.lng + ',' + from.lat + ';'
+    + to.lng   + ',' + to.lat
+    + '?alternatives=true&overview=full&geometries=geojson&steps=false';
+
+  try {
+    var resp = await fetch(url);
+    if (!resp.ok) throw new Error('OSRM HTTP ' + resp.status);
+    var data = await resp.json();
+    if (!data.routes || !data.routes.length) throw new Error('OSRM: sense rutes');
+
+    // Ruta més ràpida (OSRM les ordena per durada ascendent)
+    var fastest = data.routes.reduce(function(a, b) {
+      return a.duration < b.duration ? a : b;
+    });
+    // Ruta eco: la més curta en km dins la tolerància de temps (+15%)
+    var maxDur = fastest.duration * (1 + ECO_TIME_TOLERANCE);
+    var withinTol = data.routes.filter(function(r) { return r.duration <= maxDur; });
+    var eco = withinTol.reduce(function(a, b) {
+      return a.distance < b.distance ? a : b;
+    });
+
+    var savedM   = Math.max(0, fastest.distance - eco.distance);
+    var savedKm  = savedM / 1000;
+    var savedPct = fastest.distance > 0
+      ? Math.round((savedKm / (fastest.distance / 1000)) * 100)
+      : 0;
+
+    var result = { fastest: fastest, eco: eco, saved_km: savedKm, saved_pct: savedPct };
+    segmentCache.set(key, result);
+    return result;
+
+  } catch(e) {
+    // Fallback: línia recta, sense dades d'estalvi
+    var fb = fallbackRoute(from, to);
+    var result = { fastest: fb, eco: fb, saved_km: 0, saved_pct: 0 };
+    segmentCache.set(key, result);
+    return result;
+  }
+}
+
+/** Extreu la ruta triada (eco o ràpida) a partir de l'objecte de segment */
+function pickSegmentRoute(segmentData, ecoEnabled) {
+  if (!segmentData) return null;
+  return ecoEnabled ? segmentData.eco : segmentData.fastest;
+}
+
+/**
+ * Obté les alternatives d'un segment i retorna la ruta triada + km estalviats
+ * @returns {{ route, saved_km, saved_pct }}
+ */
+async function chooseSegment(from, to, ecoEnabled) {
+  var data = await fetchSegmentAlternatives(from, to);
+  return {
+    route:     pickSegmentRoute(data, ecoEnabled),
+    saved_km:  ecoEnabled ? (data.saved_km  || 0) : 0,
+    saved_pct: ecoEnabled ? (data.saved_pct || 0) : 0
+  };
+}
+
+/** Línia recta com a fallback si OSRM no respon */
+function fallbackRoute(from, to) {
+  return {
+    geometry: {
+      type: 'LineString',
+      coordinates: [[from.lng, from.lat], [to.lng, to.lat]]
+    },
+    distance: 0,
+    duration: 0
+  };
+}
+
+function formatDuration(seconds) {
+  var h = Math.floor(seconds / 3600);
+  var m = Math.floor((seconds % 3600) / 60);
+  return h > 0 ? (h + 'h ' + (m > 0 ? m + 'min' : '')) : (m + ' min');
+}
+
+function formatDistance(meters) {
+  return meters >= 1000
+    ? (meters / 1000).toFixed(1) + ' km'
+    : Math.round(meters) + ' m';
+}
+
+/** Construeix la geometria completa concatenant segments OSRM */
+async function buildRouteGeometry(stops, ecoEnabled) {
+  var allCoords       = [];
+  var totalDist       = 0;
+  var totalDur        = 0;
+  var totalSavedKm    = 0;
+  var totalSavedSegs  = 0;
+
+  for (var i = 0; i < stops.length - 1; i++) {
+    try {
+      var segResult = await chooseSegment(stops[i], stops[i + 1], ecoEnabled);
+      var chosen = segResult.route;
+      if (chosen) {
+        allCoords   = allCoords.concat(chosen.geometry.coordinates);
+        totalDist  += chosen.distance;
+        totalDur   += chosen.duration;
+        totalSavedKm += segResult.saved_km;
+        if (segResult.saved_km > 0) totalSavedSegs++;
+      }
+    } catch(e) {
+      // Fallback: línia recta si OSRM falla per a aquest segment
+      var fb = fallbackRoute(stops[i], stops[i + 1]);
+      allCoords = allCoords.concat(fb.geometry.coordinates);
+    }
+  }
+
+  return {
+    coordinates:       allCoords,
+    totalDistance:     totalDist,
+    totalDuration:     totalDur,
+    totalSavedKm:      totalSavedKm,
+    totalSavedSegments: totalSavedSegs
+  };
+}
+
+/** Dibuixa la polilínia de la ruta al mapa */
+function drawRoute(coordinates) {
+  if (!coordinates || !coordinates.length) return;
+  if (mapRouteLayer) mapInstance.removeLayer(mapRouteLayer);
+
+  // GeoJSON usa [lng, lat]; Leaflet usa [lat, lng]
+  var latlngs = coordinates.map(function(c) { return [c[1], c[0]]; });
+  mapRouteLayer = L.polyline(latlngs, {
+    color: '#28b7ff', weight: 4, opacity: 0.88
+  }).addTo(mapInstance);
+}
+
+// ── Generació de ruta principal ──────────────────────────────
+
+async function generateMapRoute() {
+  // Si el mapa no s'ha inicialitzat, intenta-ho ara
+  if (!mapInitialized) {
+    initMap();
+    await new Promise(function(r) { setTimeout(r, 600); });
+  }
+  if (!mapOrigin) {
+    document.getElementById('map-status').textContent =
+      '// Esperant ubicació... Torna a intentar-ho en uns segons.';
+    return;
+  }
+
+  var tipus = tipusVehicle || 'N1';
+  var ids   = RUTES[tipus] || [];
+
+  // Construeix la llista de parades amb coordenades conegudes
+  var stops = ids
+    .map(function(id) {
+      var hotel  = HOTELS.find(function(h) { return h.id === id; });
+      var coords = HOTEL_COORDS[id];
+      if (!hotel || !coords) return null;
+      return { id: id, name: hotel.nom, lat: coords.lat, lng: coords.lng };
+    })
+    .filter(Boolean);
+
+  if (!stops.length) {
+    document.getElementById('map-status').textContent =
+      '// Cap hotel amb coordenades per a la ruta ' + tipus;
+    return;
+  }
+
+  document.getElementById('map-status').textContent = '// Calculant ruta òptima...';
+
+  // Hub d'origen segons el tipus de vehicle
+  var hubKey = tipus === 'N1' ? 'inca' : 'son-castello';
+  var centre = CENTRES[hubKey];
+  var hub    = { name: centre.nom, lat: centre.lat, lng: centre.lng };
+
+  // Neteja marcadors anteriors
+  mapMarkersLayer.forEach(function(m) { mapInstance.removeLayer(m); });
+  mapMarkersLayer = [];
+
+  // Marcador del hub d'origen
+  var hubMarker = L.marker([hub.lat, hub.lng])
+    .addTo(mapInstance)
+    .bindPopup('<b>🏭 ' + hub.name + '</b><br>Origen');
+  mapMarkersLayer.push(hubMarker);
+
+  // Marcadors de cada hotel (taronja si moll_ocupat, verd si OK)
+  stops.forEach(function(stop, i) {
+    var hotel    = HOTELS.find(function(h) { return h.id === stop.id; });
+    var color    = (hotel && hotel.moll_ocupat) ? '#ff9a00' : '#26d980';
+    var alertTxt = (hotel && hotel.moll_ocupat)
+      ? '<br><span style="color:#ff9a00;">⚠️ Moll ocupat fins les ' + hotel.fins + '</span>' : '';
+
+    var icon = L.divIcon({
+      html: '<div style="background:' + color + ';color:#060d1f;border-radius:50%;'
+          + 'width:28px;height:28px;display:flex;align-items:center;justify-content:center;'
+          + 'font-weight:700;font-size:12px;border:2px solid rgba(0,0,0,.45);">'
+          + (i + 1) + '</div>',
+      className: '',
+      iconSize:   [28, 28],
+      iconAnchor: [14, 14]
+    });
+
+    var m = L.marker([stop.lat, stop.lng], { icon: icon })
+      .addTo(mapInstance)
+      .bindPopup('<b>' + stop.name + '</b>' + alertTxt
+        + '<br>' + (hotel ? hotel.carros : '?') + ' carros');
+    mapMarkersLayer.push(m);
+  });
+
+  // Construeix i dibuixa la geometria OSRM
+  try {
+    var allPoints = [hub].concat(stops);
+    var geometry  = await buildRouteGeometry(allPoints, true);
+    drawRoute(geometry.coordinates);
+
+    mapLastRoutePoints = allPoints;
+    mapLastStops       = stops;
+
+    var distInfo = geometry.totalDistance > 0
+      ? ' · ' + formatDistance(geometry.totalDistance) + ' · ' + formatDuration(geometry.totalDuration)
+      : ' (sense dades de distància)';
+    document.getElementById('map-status').textContent =
+      '// Ruta ' + tipus + ' · ' + stops.length + ' parades' + distInfo;
+
+    document.getElementById('map-maps-btn').disabled = false;
+    renderMapSegments(allPoints);
+
+    // Ajusta la vista per mostrar tots els punts
+    var bounds = L.latLngBounds(allPoints.map(function(p) { return [p.lat, p.lng]; }));
+    mapInstance.fitBounds(bounds, { padding: [20, 20] });
+
+  } catch(e) {
+    document.getElementById('map-status').textContent =
+      '// Error calculant ruta. Comprova connexió a Internet.';
+    console.error('[PolarRoute/Mapa]', e);
+  }
+
+}
+
+// ── Llista de segments (links tram a tram per a Google Maps) ─
+
+function renderMapSegments(points) {
+  var cont = document.getElementById('map-segments');
+  cont.innerHTML = '';
+  if (!points || points.length < 2) return;
+
+  for (var i = 0; i < points.length - 1; i++) {
+    var from = points[i];
+    var to   = points[i + 1];
+    var url  = 'https://www.google.com/maps/dir/?api=1'
+      + '&origin='      + from.lat + ',' + from.lng
+      + '&destination=' + to.lat   + ',' + to.lng
+      + '&travelmode=driving';
+
+    var a  = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel    = 'noopener noreferrer';
+    a.className = 'map-segment-link';
+    a.textContent = (i + 1) + '. ' + (from.name || 'Origen') + ' → ' + to.name;
+    cont.appendChild(a);
+  }
+}
+
+// ── URL completa de Google Maps per a tota la ruta ───────────
+
+function buildFullGoogleMapsUrl(points) {
+  if (!points || points.length < 2) return '#';
+  var origin      = points[0];
+  var destination = points[points.length - 1];
+  var waypoints   = points.slice(1, -1)
+    .map(function(p) { return p.lat + ',' + p.lng; })
+    .join('|');
+
+  var url = 'https://www.google.com/maps/dir/?api=1'
+    + '&origin='      + origin.lat      + ',' + origin.lng
+    + '&destination=' + destination.lat + ',' + destination.lng
+    + '&travelmode=driving';
+  if (waypoints) url += '&waypoints=' + encodeURIComponent(waypoints);
+  return url;
+}
+
+// ============================================================
+// GESTOR — PLANIFICADOR MANUAL DE RUTA AL MAPA
+// ============================================================
+
+var gestorSelectedStops = [];   // [{uid, nom, lat, lng}]
+var gestorDragSrcUid    = null;
+var gestorMapSetupDone  = false;
+
+/**
+ * Construeix la llista de destins disponibles per al gestor
+ * (tots els hotels de HOTEL_COORDS, ordenats per nom)
+ */
+function buildGestorDestinations() {
+  var dests = [];
+  Object.keys(HOTEL_COORDS).forEach(function(id) {
+    var coord   = HOTEL_COORDS[id];
+    var hotelDB = HOTELS.find(function(h) { return h.id === id; });
+    var nom     = hotelDB ? hotelDB.nom
+                : id.replace(/-/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+    dests.push({
+      uid:        id,
+      nom:        nom,
+      lat:        coord.lat,
+      lng:        coord.lng,
+      carros:     10,     // carros per defecte al afegir un destí
+      centre:     false,
+      repeatable: false
+    });
+  });
+  dests.sort(function(a, b) { return a.nom.localeCompare(b.nom, 'ca'); });
+  return dests;
+}
+
+/**
+ * Renderitza la llista de destins seleccionables (botons + / ja seleccionats)
+ */
+function renderGestorSelectableList() {
+  var container = document.getElementById('gestor-selectable-list');
+  if (!container) return;
+  var all = buildGestorDestinations();
+  var selectedUids = gestorSelectedStops.map(function(s) { return s.uid; });
+
+  var html = '';
+  all.forEach(function(dest) {
+    var selected = selectedUids.indexOf(dest.uid) !== -1;
+    html += '<div style="display:flex; align-items:center; justify-content:space-between;'
+          + ' padding:6px 8px; border-radius:8px; margin-bottom:4px;'
+          + ' background:' + (selected ? 'rgba(40,183,255,.1)' : 'transparent') + ';'
+          + ' border:1px solid ' + (selected ? 'rgba(40,183,255,.4)' : 'transparent') + ';">'
+          + '<span style="font-size:13px; color:' + (selected ? 'var(--cyan)' : 'var(--text)') + ';">'
+          + escapeHtml(dest.nom) + '</span>'
+          + (selected
+              ? '<button type="button" onclick="gestorRemoveStop(\'' + dest.uid + '\')"'
+                + ' style="font-size:11px; padding:2px 8px; border-radius:6px;'
+                + ' background:rgba(255,63,94,.1); color:var(--danger);'
+                + ' border:1px solid rgba(255,63,94,.3); cursor:pointer;">−</button>'
+              : '<button type="button" onclick="gestorAddStop(\'' + dest.uid + '\')"'
+                + ' style="font-size:11px; padding:2px 8px; border-radius:6px;'
+                + ' background:rgba(40,183,255,.1); color:var(--cyan);'
+                + ' border:1px solid rgba(40,183,255,.3); cursor:pointer;">+</button>')
+          + '</div>';
+  });
+  container.innerHTML = html || '<p style="color:var(--text2); font-size:12px; padding:6px;">Cap destí disponible.</p>';
+}
+
+/**
+ * Renderitza la llista de parades seleccionades amb drag & drop
+ */
+function renderGestorSelectedList() {
+  var ul = document.getElementById('gestor-selected-list');
+  if (!ul) return;
+
+  if (!gestorSelectedStops.length) {
+    ul.innerHTML = '<li style="color:var(--text2); font-size:12px; padding:8px 4px;">'
+                 + 'Afegeix destins des de la llista superior.</li>';
+    document.getElementById('gestor-map-build-btn').disabled = true;
+    document.getElementById('gestor-map-clear-btn').disabled = true;
+    return;
+  }
+
+  var html = '';
+  gestorSelectedStops.forEach(function(stop, i) {
+    var carrosVal = stop.carros !== undefined ? stop.carros : 10;
+    html += '<li draggable="true" data-uid="' + stop.uid + '"'
+          + ' style="display:flex; align-items:center; gap:8px; padding:10px 10px;'
+          + ' margin-bottom:6px; border-radius:10px; cursor:grab;'
+          + ' background:var(--bg3); border:1px solid rgba(43,126,255,.25);">'
+          + '<span style="color:var(--text2); font-size:12px; min-width:18px; text-align:center; flex-shrink:0;">'
+          + (i + 1) + '.</span>'
+          + '<div style="flex:1; min-width:0;">'
+          +   '<div style="font-size:13px; color:var(--text); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">'
+          +     escapeHtml(stop.nom)
+          +   '</div>'
+          +   '<div style="font-size:12px; color:var(--text2); margin-top:3px; display:flex; align-items:center; gap:6px;">'
+          +     '📦 Carros: '
+          +     '<input type="number" min="5" max="20" value="' + carrosVal + '"'
+          +       ' data-uid="' + stop.uid + '"'
+          +       ' style="width:48px; border:1px solid rgba(43,126,255,.4);'
+          +       ' border-radius:6px; background:var(--bg2);'
+          +       ' color:var(--text); font:inherit; font-size:12px;'
+          +       ' padding:2px 5px; text-align:center;"'
+          +       ' onclick="event.stopPropagation()"/>'
+          +   '</div>'
+          + '</div>'
+          + '<span style="color:var(--text2); font-size:14px; user-select:none; flex-shrink:0; cursor:grab;">⠿</span>'
+          + '<button type="button" data-uid="' + stop.uid + '"'
+          +   ' style="border:none; background:rgba(255,63,94,.15); color:var(--danger);'
+          +   ' border-radius:8px; width:26px; height:26px; cursor:pointer;'
+          +   ' font-size:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center;"'
+          +   ' onclick="gestorRemoveStop(\'' + stop.uid + '\'); event.stopPropagation();">✕</button>'
+          + '</li>';
+  });
+  ul.innerHTML = html;
+
+  // Event listeners per actualitzar els carros de cada parada
+  ul.querySelectorAll('input[type="number"]').forEach(function(inp) {
+    inp.addEventListener('change', function(e) {
+      var uid = e.target.dataset.uid;
+      var val = Math.min(20, Math.max(5, parseInt(e.target.value) || 10));
+      e.target.value = val;
+      var stop = gestorSelectedStops.find(function(s) { return s.uid === uid; });
+      if (stop) stop.carros = val;
+    });
+  });
+
+  // Afegeix event listeners de drag & drop
+  ul.querySelectorAll('li[draggable]').forEach(function(li) {
+    li.addEventListener('dragstart', function(e) {
+      gestorDragSrcUid = li.dataset.uid;
+      e.dataTransfer.effectAllowed = 'move';
+      li.style.opacity = '0.5';
+    });
+    li.addEventListener('dragend', function() {
+      li.style.opacity = '1';
+    });
+    li.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+    li.addEventListener('drop', function(e) {
+      e.preventDefault();
+      var targetUid = li.dataset.uid;
+      if (!gestorDragSrcUid || gestorDragSrcUid === targetUid) return;
+      var srcIdx = gestorSelectedStops.findIndex(function(s) { return s.uid === gestorDragSrcUid; });
+      var tgtIdx = gestorSelectedStops.findIndex(function(s) { return s.uid === targetUid; });
+      if (srcIdx === -1 || tgtIdx === -1) return;
+      var moved = gestorSelectedStops.splice(srcIdx, 1)[0];
+      gestorSelectedStops.splice(tgtIdx, 0, moved);
+      renderGestorSelectedList();
+      gestorDragSrcUid = null;
+    });
+  });
+
+  document.getElementById('gestor-map-build-btn').disabled = false;
+  document.getElementById('gestor-map-clear-btn').disabled = false;
+}
+
+/** Afegeix una parada a la llista del gestor */
+function gestorAddStop(uid) {
+  if (gestorSelectedStops.find(function(s) { return s.uid === uid; })) return;
+  var all  = buildGestorDestinations();
+  var dest = all.find(function(d) { return d.uid === uid; });
+  if (!dest) return;
+  gestorSelectedStops.push(dest);
+  renderGestorSelectableList();
+  renderGestorSelectedList();
+}
+
+/** Elimina una parada de la llista del gestor */
+function gestorRemoveStop(uid) {
+  gestorSelectedStops = gestorSelectedStops.filter(function(s) { return s.uid !== uid; });
+  renderGestorSelectableList();
+  renderGestorSelectedList();
+}
+
+/**
+ * Algoritme del veí més proper (nearest neighbour) per optimitzar l'ordre de parades
+ * @param {{lat,lng}} origin  - Punt de partida
+ * @param {Array} stops       - [{uid, nom, lat, lng}]
+ * @returns {Array}           - Còpia reordenada de stops
+ */
+function nearestNeighborOrder(origin, stops) {
+  var remaining = stops.slice();
+  var ordered   = [];
+  var current   = origin;
+
+  while (remaining.length) {
+    var best = null, bestDist = Infinity, bestIdx = -1;
+    remaining.forEach(function(s, i) {
+      var d = Math.pow(s.lat - current.lat, 2) + Math.pow(s.lng - current.lng, 2);
+      if (d < bestDist) { bestDist = d; best = s; bestIdx = i; }
+    });
+    ordered.push(best);
+    current = best;
+    remaining.splice(bestIdx, 1);
+  }
+  return ordered;
+}
+
+// ── Centres logístics (per càlcul de capacitat) ──────────────
+const CENTRES_LOGISTICS = [
+  { id:'son-castello', nom:'Son Castelló', lat:39.6118, lng:2.6752 },
+  { id:'inca',         nom:'Inca (Hub)',   lat:39.7211, lng:2.9119 },
+];
+
+/**
+ * Retorna el centre logístic més proper a un punt {lat, lng}
+ */
+function getNearestCentre(point) {
+  var nearest  = CENTRES_LOGISTICS[0];
+  var bestDist = Infinity;
+  CENTRES_LOGISTICS.forEach(function(c) {
+    var dist = Math.sqrt(
+      Math.pow(c.lat - point.lat, 2) + Math.pow(c.lng - point.lng, 2)
+    );
+    if (dist < bestDist) { bestDist = dist; nearest = c; }
+  });
+  return nearest;
+}
+
+/**
+ * Planifica la ruta tenint en compte la capacitat del vehicle.
+ * El vehicle surt carregat; quan la càrrega restant < carros de la parada,
+ * s'insereix automàticament un centre logístic proper per recarregar.
+ * @param {Array}  stops           - Parades ordenades [{uid, nom, lat, lng, carros}]
+ * @param {number} vehicleCapacity - Carros màxims del vehicle
+ * @returns {{ plan: Array, autoCentreCount: number }}
+ */
+function buildCapacityPlan(stops, vehicleCapacity) {
+  var plan             = [];
+  var carrosActuals    = vehicleCapacity;
+  var autoCentreCount  = 0;
+
+  stops.forEach(function(stop) {
+    if (stop.centre) {
+      plan.push(Object.assign({}, stop));
+      carrosActuals = vehicleCapacity;
+      return;
+    }
+
+    var carrosStop = stop.carros || 0;
+
+    // Si no hi ha prou càrrega, insereix el centre més proper
+    if (carrosActuals < carrosStop) {
+      var lastCoord = plan.length > 0 && HOTEL_COORDS[plan[plan.length - 1].uid]
+        ? HOTEL_COORDS[plan[plan.length - 1].uid]
+        : { lat: 39.6118, lng: 2.6752 };
+      var centre = getNearestCentre(lastCoord);
+      plan.push(Object.assign({}, centre, {
+        uid:        'auto-centre-' + Date.now() + '-' + autoCentreCount,
+        id:         centre.id,
+        nom:        centre.nom,
+        name:       centre.nom,
+        carros:     0,
+        centre:     true,
+        auto:       true,
+        repeatable: true
+      }));
+      carrosActuals = vehicleCapacity;
+      autoCentreCount++;
+    }
+
+    plan.push(Object.assign({}, stop));
+    carrosActuals = Math.max(0, carrosActuals - carrosStop);
+  });
+
+  return { plan: plan, autoCentreCount: autoCentreCount };
+}
+
+/**
+ * Renderitza el resum de capacitat sota el botó "Generar ruta"
+ */
+function renderCapacitySummary(plan, capacity, autoCentreCount, geometry) {
+  var container = document.getElementById('gestor-capacity-summary');
+  if (!container) return;
+
+  var totalCarros = plan
+    .filter(function(s) { return !s.centre; })
+    .reduce(function(sum, s) { return sum + (s.carros || 0); }, 0);
+
+  var autoColor = autoCentreCount > 0 ? 'var(--alert)' : 'var(--ok)';
+
+  // Bloc de capacitat
+  var capacitatHtml =
+    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:0;">'
+    +   '<div style="text-align:center;">'
+    +     '<div style="font-size:1.3rem; font-weight:700; color:var(--cyan);">' + totalCarros + '</div>'
+    +     '<div style="font-size:0.8rem; color:var(--text2);">Carros totals</div>'
+    +   '</div>'
+    +   '<div style="text-align:center;">'
+    +     '<div style="font-size:1.3rem; font-weight:700; color:' + autoColor + ';">' + autoCentreCount + '</div>'
+    +     '<div style="font-size:0.8rem; color:var(--text2);">Recàrregues auto</div>'
+    +   '</div>'
+    + '</div>'
+    + (autoCentreCount > 0
+        ? '<p style="font-size:0.82rem; color:var(--alert); margin:8px 0 0;">'
+          + '⚠️ ' + autoCentreCount + ' parada(es) d\'estació inserides automàticament'
+          + ' (màx. ' + capacity + ' carros).</p>'
+        : '<p style="font-size:0.82rem; color:var(--ok); margin:8px 0 0;">'
+          + '✓ Ruta possible sense recàrrega intermèdia.</p>');
+
+  // Dades de consum i eco
+  var ecoEnabled = document.getElementById('gestor-eco-mode')
+    ? document.getElementById('gestor-eco-mode').checked
+    : false;
+  var totalDistM  = geometry ? (geometry.totalDistance || 0) : 0;
+  var totalKm     = totalDistM / 1000;
+  var savedKm     = geometry ? (geometry.totalSavedKm      || 0) : 0;
+  var savedSegs   = geometry ? (geometry.totalSavedSegments || 0) : 0;
+
+  // Consum real (ruta eco si activa, altrament ruta ràpida)
+  var tipus       = typeof tipusVehicle !== 'undefined' ? tipusVehicle : 'N2';
+  var consumTotal = calcularConsumDiesel(totalKm, tipus);
+
+  var ecoHtml;
+  if (ecoEnabled) {
+    // Estalvi en litres i CO₂ respecte a la ruta ràpida (totalKm + savedKm)
+    var kmSenseEco    = totalKm + savedKm;
+    var consumSenseEco = calcularConsumDiesel(kmSenseEco, tipus);
+    var savedLitres   = parseFloat((consumSenseEco.litres - consumTotal.litres).toFixed(2));
+    var savedCO2kg    = parseFloat((consumSenseEco.co2_kg  - consumTotal.co2_kg).toFixed(2));
+
+    ecoHtml =
+      '<div style="border-top:1px solid rgba(0,229,150,.18); margin-top:10px; padding-top:10px;">'
+      +   '<p style="color:var(--ok); font-size:11px; font-weight:700;'
+      +      ' letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px;">'
+      +     '// CONSUM ESTIMAT (RUTA ECO)</p>'
+      +   '<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px;">'
+      +     '<div style="text-align:center;">'
+      +       '<div style="font-size:1.2rem; font-weight:700; color:var(--cyan);">'
+      +         consumTotal.litres + ' L'
+      +       '</div>'
+      +       '<div style="font-size:0.78rem; color:var(--text2);">Dièsel estimat</div>'
+      +     '</div>'
+      +     '<div style="text-align:center;">'
+      +       '<div style="font-size:1.2rem; font-weight:700; color:var(--ok);">'
+      +         '+' + savedLitres + ' L'
+      +       '</div>'
+      +       '<div style="font-size:0.78rem; color:var(--text2);">Litres estalviats</div>'
+      +     '</div>'
+      +     '<div style="text-align:center;">'
+      +       '<div style="font-size:1.2rem; font-weight:700; color:var(--ok);">'
+      +         '+' + savedCO2kg + ' kg'
+      +       '</div>'
+      +       '<div style="font-size:0.78rem; color:var(--text2);">CO₂ estalviat</div>'
+      +     '</div>'
+      +   '</div>'
+      + (savedKm === 0
+          ? '<p style="font-size:0.82rem; color:var(--text2); margin-top:6px;">'
+            + 'La ruta ràpida i l\'eco coincideixen en tots els trams.</p>'
+          : '<p style="font-size:0.82rem; color:var(--ok); margin-top:6px;">'
+            + '✓ Eco: ' + savedKm.toFixed(1) + ' km menys · '
+            + savedSegs + ' trams millorats.</p>')
+      + '</div>';
+  } else {
+    ecoHtml =
+      '<div style="border-top:1px solid rgba(43,126,255,.18); margin-top:10px; padding-top:10px;">'
+      +   '<p style="color:var(--cyan); font-size:11px; font-weight:700;'
+      +      ' letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px;">'
+      +     '// CONSUM ESTIMAT</p>'
+      +   '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">'
+      +     '<div style="text-align:center;">'
+      +       '<div style="font-size:1.2rem; font-weight:700; color:var(--cyan);">'
+      +         consumTotal.litres + ' L'
+      +       '</div>'
+      +       '<div style="font-size:0.78rem; color:var(--text2);">Dièsel estimat</div>'
+      +     '</div>'
+      +     '<div style="text-align:center;">'
+      +       '<div style="font-size:1.2rem; font-weight:700; color:var(--text2);">'
+      +         consumTotal.co2_kg + ' kg'
+      +       '</div>'
+      +       '<div style="font-size:0.78rem; color:var(--text2);">CO₂ emès</div>'
+      +     '</div>'
+      +   '</div>'
+      +   '<p style="font-size:0.82rem; color:var(--text2); margin-top:6px;">'
+      +     'Activa el mode eco per veure l\'estalvi possible.</p>'
+      + '</div>';
+  }
+
+  container.innerHTML =
+    '<div style="border:1px solid rgba(0,229,150,.25); border-radius:10px;'
+    + ' background:rgba(0,229,150,.06); padding:12px; margin-top:10px;">'
+    +   '<p style="color:var(--ok); font-size:11px; font-weight:700;'
+    +      ' letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px;">'
+    +     '// RESUM CAPACITAT</p>'
+    +   capacitatHtml
+    +   ecoHtml
+    + '</div>';
+}
+
+/**
+ * Genera la ruta del gestor al mapa
+ */
+async function generateGestorMapRoute() {
+  if (!gestorSelectedStops.length) return;
+
+  var buildBtn  = document.getElementById('gestor-map-build-btn');
+  var mapsBtn   = document.getElementById('gestor-map-maps-btn');
+  var statusEl  = document.getElementById('map-status');
+
+  // Assegura que l'origen (geoloc o fallback) ja s'ha resolt
+  if (!mapOrigin) {
+    if (statusEl) statusEl.textContent =
+      '// Esperant ubicació... Torna a intentar-ho en uns segons.';
+    buildBtn.disabled = false;
+    return;
+  }
+
+  buildBtn.disabled = true;
+  if (statusEl) statusEl.textContent = '// Calculant ruta optimitzada...';
+
+  // L'origen és sempre la ubicació actual (o fallback Son Castelló)
+  var origin = { lat: mapOrigin.lat, lng: mapOrigin.lng, nom: mapOrigin.nom || mapOrigin.name || 'Origen' };
+
+  // Mode de càlcul (optimitzat o manual)
+  var modeEl = document.querySelector('input[name="gestor-route-mode"]:checked');
+  var mode   = modeEl ? modeEl.value : 'optimized';
+
+  // Eco mode
+  var ecoMode = document.getElementById('gestor-eco-mode')
+              ? document.getElementById('gestor-eco-mode').checked
+              : true;
+
+  // Ordena les parades si mode optimitzat (exclou centres existents)
+  var baseStops = gestorSelectedStops.filter(function(s) { return !s.centre; });
+  var orderedStops = (mode === 'optimized')
+    ? nearestNeighborOrder(origin, baseStops)
+    : baseStops.slice();
+
+  // Aplica el pla de capacitat (vehicle N2 = 27 carros per al xofer interactiu)
+  var vehicleCapacity = 27;
+  var capacityResult  = buildCapacityPlan(orderedStops, vehicleCapacity);
+  var planWithCentres = capacityResult.plan;
+  var autoCentreCount = capacityResult.autoCentreCount;
+
+  if (autoCentreCount > 0 && statusEl) {
+    statusEl.textContent = '// Calculant... ' + autoCentreCount
+      + ' parada(es) a estació afegides per capacitat';
+  }
+
+  // Determina el punt final
+  var endModeEl = document.querySelector('input[name="gestor-end-mode"]:checked');
+  var endMode   = endModeEl ? endModeEl.value : 'origin';
+  var endPoint  = null;
+  if (endMode === 'origin') {
+    endPoint = origin;
+  } else if (endMode === 'son_castello') {
+    endPoint = CENTRES['son-castello'];
+  } else if (endMode === 'inca') {
+    endPoint = CENTRES['inca'];
+  }
+
+  // Construeix la seqüència de punts (inclou centres automàtics)
+  var points = [origin].concat(planWithCentres.map(function(s) {
+    var coord = s.centre ? { lat: s.lat, lng: s.lng } : (HOTEL_COORDS[s.uid] || { lat: s.lat, lng: s.lng });
+    return { lat: coord.lat, lng: coord.lng, nom: s.nom };
+  }));
+  if (endPoint) points.push(Object.assign({}, endPoint));
+
+  mapLastRoutePoints = points;
+  mapLastStops       = planWithCentres;
+
+  try {
+    var geometry = await buildRouteGeometry(points, ecoMode);
+
+    drawRoute(geometry.coordinates);
+    if (mapInstance) {
+      var bounds = L.latLngBounds(points.map(function(p) { return [p.lat, p.lng]; }));
+      mapInstance.fitBounds(bounds, { padding: [24, 24] });
+    }
+
+    // Renderitza segments (passa el pla complet amb centres)
+    renderGestorSegments(planWithCentres, origin, endPoint);
+
+    if (mapsBtn) {
+      mapsBtn.disabled = false;
+    }
+    var nParadesReals = planWithCentres.filter(function(s) { return !s.centre; }).length;
+    var distInfo = geometry.totalDistance > 0
+      ? ' · ' + formatDistance(geometry.totalDistance) + ' · ' + formatDuration(geometry.totalDuration)
+      : '';
+    if (statusEl) statusEl.textContent =
+      '// Ruta assignada · ' + nParadesReals + ' parades' + distInfo;
+
+    // Resum de capacitat (amb dades d'estalvi eco)
+    renderCapacitySummary(planWithCentres, vehicleCapacity, autoCentreCount, geometry);
+
+    // Desa la ruta assignada al xofer interactiu (hotels + centres de descàrrega)
+    var rutaIds = planWithCentres
+      .map(function(s) { return s.centre ? s.id : s.uid; });
+    localStorage.setItem(
+      'polarroute_ruta_assignada_interactiu',
+      JSON.stringify(rutaIds)
+    );
+
+    // Desa els carros per parada
+    var carrosMap = {};
+    planWithCentres.forEach(function(s) {
+      if (!s.centre && s.carros) carrosMap[s.uid] = s.carros;
+    });
+    localStorage.setItem(
+      'polarroute_carros_interactiu',
+      JSON.stringify(carrosMap)
+    );
+
+    // Reseteja l'estat de completats de la ruta anterior
+    localStorage.removeItem('polarroute_completats_3421-MLL');
+    localStorage.removeItem('polarroute_ruta_iniciada_3421-MLL');
+
+    // Actualitza el panel d'estat del gestor (si existeix)
+    updateInteractiuStatus();
+
+  } catch (err) {
+    if (statusEl) statusEl.textContent = '// Error al calcular la ruta';
+    console.error(err);
+  }
+
+  buildBtn.disabled = false;
+}
+
+/**
+ * Renderitza els segments de la ruta del gestor (links Google Maps per tram)
+ */
+function renderGestorSegments(stops, origin, endPoint) {
+  var container = document.getElementById('map-segments');
+  if (!container) return;
+
+  // Resol coordenades per a cada punt de la ruta
+  function resolveCoord(pt) {
+    if (pt.lat !== undefined && pt.lng !== undefined) return pt;
+    var c = pt.uid ? HOTEL_COORDS[pt.uid] : null;
+    return c || { lat: 39.6118, lng: 2.6752 };
+  }
+
+  var allPoints = [origin].concat(stops).concat(endPoint ? [endPoint] : []);
+  var html = '<div style="margin-top:14px;">'
+           + '<p style="font-size:11px; color:var(--text2); letter-spacing:.06em;'
+           + ' text-transform:uppercase; margin-bottom:8px; font-weight:700;">// TRAMS DE RUTA</p>';
+
+  for (var i = 0; i < allPoints.length - 1; i++) {
+    var from     = allPoints[i];
+    var to       = allPoints[i + 1];
+    var fromC    = resolveCoord(from);
+    var toC      = resolveCoord(to);
+    var fromName = from.nom || 'Origen';
+    var toName   = to.nom   || 'Destí';
+    // Etiqueta especial per a centres auto-inserits
+    if (to.auto)   toName   = '🔄 ' + toName + ' (recàrrega)';
+    if (from.auto) fromName = '🔄 ' + fromName + ' (recàrrega)';
+    var url = 'https://www.google.com/maps/dir/?api=1'
+            + '&origin=' + fromC.lat + ',' + fromC.lng
+            + '&destination=' + toC.lat + ',' + toC.lng
+            + '&travelmode=driving';
+    html += '<a href="' + url + '" target="_blank" rel="noopener" class="map-segment-link"'
+          + (to.auto || from.auto ? ' style="border-color:rgba(255,154,0,.4);"' : '') + '>'
+          + '<span style="color:var(--text2); font-size:11px;">' + (i + 1) + '.</span> '
+          + escapeHtml(fromName) + ' → ' + escapeHtml(toName)
+          + ' <span style="color:var(--text2); font-size:11px; float:right;">↗</span></a>';
+  }
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+/**
+ * Inicialitza el panell del gestor (una vegada per visita a la pestanya)
+ */
+function setupGestorMapPanel() {
+  if (gestorMapSetupDone) {
+    renderGestorSelectableList();
+    renderGestorSelectedList();
+    return;
+  }
+  gestorMapSetupDone = true;
+
+  renderGestorSelectableList();
+  renderGestorSelectedList();
+
+  var buildBtn = document.getElementById('gestor-map-build-btn');
+  var clearBtn = document.getElementById('gestor-map-clear-btn');
+  var mapsBtn  = document.getElementById('gestor-map-maps-btn');
+
+  if (buildBtn) {
+    buildBtn.addEventListener('click', function() {
+      generateGestorMapRoute();
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', function() {
+      gestorSelectedStops = [];
+      mapLastRoutePoints  = [];
+      if (mapRouteLayer && mapInstance) {
+        mapInstance.removeLayer(mapRouteLayer);
+        mapRouteLayer = null;
+      }
+      var segs = document.getElementById('map-segments');
+      if (segs) segs.innerHTML = '';
+      var capSum = document.getElementById('gestor-capacity-summary');
+      if (capSum) capSum.innerHTML = '';
+      var statusEl = document.getElementById('map-status');
+      if (statusEl) statusEl.textContent = '// Ruta neta';
+      if (mapsBtn) mapsBtn.disabled = true;
+      renderGestorSelectableList();
+      renderGestorSelectedList();
+    });
+  }
+
+  if (mapsBtn) {
+    mapsBtn.addEventListener('click', function() {
+      var url = buildFullGoogleMapsUrl(mapLastRoutePoints);
+      if (url !== '#') window.open(url, '_blank', 'noopener');
+    });
+  }
+}
+
+/**
+ * Genera la ruta al mapa pel xofer interactiu.
+ * Usa la ruta assignada pel gestor o, si no n'hi ha, la ruta per defecte del vehicle.
+ */
+async function generateMapRouteInteractiu() {
+  if (!mapInitialized) return;
+
+  var statusEl = document.getElementById('map-status');
+
+  // Llegeix la ruta activa (assignada o fallback per defecte)
+  var rutaIds = getRutaActiva();
+
+  if (!rutaIds || !rutaIds.length) {
+    if (statusEl) statusEl.textContent = '// Sense ruta assignada · Contacta amb el gestor';
+    return;
+  }
+
+  // Llegeix els carros assignats
+  var carrosMap = {};
+  try {
+    carrosMap = JSON.parse(
+      localStorage.getItem('polarroute_carros_interactiu') || '{}'
+    );
+  } catch(e) {}
+
+  // Construeix les parades en ORDRE EXACTE de la ruta assignada
+  var stops = rutaIds.map(function(id) {
+    var info = getParadaInfo(id);
+    if (!info) return null;
+
+    if (info.centre) {
+      return {
+        id:     info.id,
+        name:   info.nom,
+        nom:    info.nom,
+        lat:    CENTRES[info.id] ? CENTRES[info.id].lat : (CENTRES_LOGISTICS.find(c => c.id === info.id) || {}).lat,
+        lng:    CENTRES[info.id] ? CENTRES[info.id].lng : (CENTRES_LOGISTICS.find(c => c.id === info.id) || {}).lng,
+        carros: 0,
+        centre: true
+      };
+    }
+
+    var coords = HOTEL_COORDS[id];
+    if (!coords) return null;
+    return {
+      id:             id,
+      name:           info.nom,
+      nom:            info.nom,
+      lat:            coords.lat,
+      lng:            coords.lng,
+      carros:         carrosMap[id] !== undefined ? carrosMap[id] : (info.carros || 10),
+      moll_ocupat:    info.moll_ocupat,
+      fins:           info.fins,
+      vehicle_extern: info.vehicle_extern,
+      centre:         false
+    };
+  }).filter(Boolean);
+
+  if (!stops.length) {
+    if (statusEl) statusEl.textContent = '// Cap parada amb coordenades conegudes';
+    return;
+  }
+
+  if (statusEl) statusEl.textContent =
+    '// Carregant ruta assignada · ' + stops.length + ' parades...';
+
+  // Origen: ubicació detectada o fallback Inca (Hub)
+  var originPoint = mapOrigin || { lat: 39.7211, lng: 2.9119, name: 'Inca (Hub) (origen per defecte)' };
+
+  // Neteja mapa anterior (marcadors i polilínia)
+  mapMarkersLayer.forEach(function(m) { if (mapInstance) mapInstance.removeLayer(m); });
+  mapMarkersLayer = [];
+  if (mapRouteLayer && mapInstance) {
+    mapInstance.removeLayer(mapRouteLayer);
+    mapRouteLayer = null;
+  }
+  if (window._originMarker && mapInstance) {
+    mapInstance.removeLayer(window._originMarker);
+  }
+
+  // Marcador d'origen / tornada
+  window._originMarker = L.marker([originPoint.lat, originPoint.lng])
+    .addTo(mapInstance)
+    .bindPopup('📍 ' + (originPoint.name || 'Origen') + '<br><small>Sortida · Tornada</small>');
+
+  // Marcadors de les parades en ordre
+  stops.forEach(function(stop, i) {
+    if (stop.centre) {
+      // Centre logístic: marcador especial 🏭
+      var centreIcon = L.divIcon({
+        html: '<div style="background:#28b7ff; color:#060d1f; border-radius:50%;'
+            + 'width:28px; height:28px; display:flex; align-items:center;'
+            + 'justify-content:center; font-size:14px; border:2px solid #060d1f;">🏭</div>',
+        className: '', iconSize: [28, 28], iconAnchor: [14, 14]
+      });
+      var m = L.marker([stop.lat, stop.lng], { icon: centreIcon })
+        .addTo(mapInstance)
+        .bindPopup('<b>🏭 ' + stop.name + '</b><br>Punt de descàrrega');
+      mapMarkersLayer.push(m);
+      return;
+    }
+
+    var color = stop.moll_ocupat ? '#ff9a00' : '#26d980';
+    var icon  = L.divIcon({
+      html: '<div style="background:' + color + '; color:#060d1f; border-radius:50%;'
+          + 'width:28px; height:28px; display:flex; align-items:center;'
+          + 'justify-content:center; font-weight:700; font-size:12px;'
+          + 'border:2px solid #060d1f;">' + (i + 1) + '</div>',
+      className: '', iconSize: [28, 28], iconAnchor: [14, 14]
+    });
+    var alertTxt = stop.moll_ocupat
+      ? '<br>⚠️ Moll ocupat fins les ' + stop.fins : '';
+    var m = L.marker([stop.lat, stop.lng], { icon: icon })
+      .addTo(mapInstance)
+      .bindPopup('<b>' + stop.name + '</b>' + alertTxt + '<br>' + stop.carros + ' carros');
+    mapMarkersLayer.push(m);
+  });
+
+  // Geometria OSRM (anada + tornada al hub)
+  try {
+    var returnPoint = { lat: originPoint.lat, lng: originPoint.lng, name: originPoint.name || 'Hub' };
+    var allPoints = [originPoint].concat(stops).concat([returnPoint]);
+    var geometry  = await buildRouteGeometry(allPoints, true);
+    drawRoute(geometry.coordinates);
+    mapLastRoutePoints = allPoints;
+
+    var bounds = L.latLngBounds(allPoints.map(function(p) { return [p.lat, p.lng]; }));
+    mapInstance.fitBounds(bounds, { padding: [20, 20] });
+
+    renderMapSegments(allPoints);
+
+    var mapsBtn = document.getElementById('map-maps-btn');
+    if (mapsBtn) mapsBtn.disabled = false;
+
+    var kmRuta    = geometry.totalDistance / 1000;
+    var tipus     = typeof tipusVehicle !== 'undefined' ? tipusVehicle : 'N2';
+    var consum    = calcularConsumDiesel(kmRuta, tipus);
+    if (statusEl) statusEl.textContent =
+      '// Ruta assignada · ' + stops.length + ' parades · '
+      + formatDistance(geometry.totalDistance) + ' · '
+      + formatDuration(geometry.totalDuration)
+      + ' · ' + consum.litres + ' L dièsel · ' + consum.co2_kg + ' kg CO₂';
+
+  } catch(e) {
+    if (statusEl) statusEl.textContent = '// Error carregant la ruta. Comprova la connexió.';
+    console.error(e);
+  }
+}
+
+// ── Events dels botons del mapa (interactiu) ─────────────────
+var _mapReloadBtn = document.getElementById('map-reload-btn');
+if (_mapReloadBtn) {
+  _mapReloadBtn.addEventListener('click', function() {
+    // Neteja mapa i recarrega la ruta assignada
+    mapMarkersLayer.forEach(function(m) { if (mapInstance) mapInstance.removeLayer(m); });
+    mapMarkersLayer = [];
+    if (mapRouteLayer && mapInstance) {
+      mapInstance.removeLayer(mapRouteLayer);
+      mapRouteLayer = null;
+    }
+    var segs = document.getElementById('map-segments');
+    if (segs) segs.innerHTML = '';
+    var mapsBtn = document.getElementById('map-maps-btn');
+    if (mapsBtn) mapsBtn.disabled = true;
+    generateMapRouteInteractiu();
+  });
+}
+var _mapMapsBtn = document.getElementById('map-maps-btn');
+if (_mapMapsBtn) {
+  _mapMapsBtn.addEventListener('click', function() {
+    var url = buildFullGoogleMapsUrl(mapLastRoutePoints);
+    if (url && url !== '#') window.open(url, '_blank', 'noopener');
+  });
+}
+
+// ============================================================
+// EVENT LISTENERS — Enter al login
+// ============================================================
+document.getElementById('inp-pass').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('inp-user').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') document.getElementById('inp-pass').focus();
+});
+
+// Inicialitza l'auto-save del camp de notes
+setupNotaDebounce();
+</script>
+</body>
+</html>

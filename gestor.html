@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#050A14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>PolarRoute — Gestor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- ====================================================
+       gestor.html — Dashboard de gestió de flota
+       Hackathon InnovaFP 2026 · Polarier
+       ==================================================== -->
+
+  <!-- Capçalera sticky -->
+  <header class="page-header">
+    <div class="logo-icon">📊</div>
+    <div class="header-info">
+      <h1>Dashboard · Son Castelló</h1>
+      <div class="subtitle" id="hora-actual">Hub Sa Pobla — temps real</div>
+    </div>
+    <div id="badge-alertes"></div>
+  </header>
+
+  <div class="container" style="margin-top: 6px;">
+
+    <!-- === COMPTADORS PRINCIPALS === -->
+    <div class="section">
+      <div class="section-title">Resum del dia</div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value cyan" id="stat-km">—</div>
+          <div class="stat-label">Km totals avui</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value green" id="stat-co2-estalviat">—</div>
+          <div class="stat-label">CO₂ estalviat (kg)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-vehicles">—</div>
+          <div class="stat-label">Vehicles actius</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value orange" id="stat-alertes">—</div>
+          <div class="stat-label">Alertes actives</div>
+        </div>
+      </div>
+
+      <!-- Barra de progrés CO2 -->
+      <div class="card" style="padding: 12px 14px; margin-top: var(--sp-sm);">
+        <div class="flex-between text-sm" style="margin-bottom: 8px;">
+          <span class="text-muted">Objectiu CO₂ estalviat</span>
+          <span class="text-mono" style="color: var(--ok);">
+            <span id="co2-actual">—</span> / <span id="co2-objectiu">193</span> kg
+          </span>
+        </div>
+        <div style="height:6px; background:var(--bg-surface); border-radius:var(--r-full); overflow:hidden;">
+          <div id="co2-bar" style="height:100%; background:linear-gradient(90deg,var(--ok),var(--accent-cyan)); border-radius:var(--r-full); width:0%; transition:width .6s ease;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- === ALERTES ACTIVES === -->
+    <div class="section" id="zona-alertes">
+      <div class="section-title">🚨 Alertes actives</div>
+      <div id="llista-alertes">
+        <!-- Generat per JavaScript -->
+      </div>
+      <button class="btn btn-secondary btn-sm" style="margin-top: 8px;" onclick="simularNova()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v4M12 16h.01"/>
+        </svg>
+        Simular nova alerta
+      </button>
+    </div>
+
+    <!-- === MAPA DE ZONES === -->
+    <div class="section">
+      <div class="section-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polygon points="1,6 1,22 8,18 16,22 23,18 23,2 16,6 8,2"/>
+          <line x1="8" y1="2" x2="8" y2="18"/>
+          <line x1="16" y1="6" x2="16" y2="22"/>
+        </svg>
+        Mapa de zones
+      </div>
+      <div class="zone-grid" id="zone-grid">
+        <!-- Generat per JavaScript -->
+      </div>
+    </div>
+
+    <!-- === VEHICLES ACTIUS === -->
+    <div class="section">
+      <div class="section-title">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="1" y="3" width="15" height="13" rx="1"/>
+          <path d="M16 8l4 2v5h-4"/>
+          <circle cx="5.5" cy="18.5" r="2.5"/>
+          <circle cx="18.5" cy="18.5" r="2.5"/>
+        </svg>
+        Vehicles · <span id="total-vehicles">10</span> en flota
+      </div>
+      <div id="llista-vehicles">
+        <!-- Generat per JavaScript -->
+      </div>
+    </div>
+
+    <!-- Footer CO2 -->
+    <div class="card text-sm text-muted center" style="padding: 10px;">
+      Factor CO₂: N1 = 0.40 kg/km · N2 = 0.58 kg/km<br>
+      Font: Aina Terrades, Dept. Sostenibilitat · Polarier 2026
+    </div>
+
+  </div>
+
+  <!-- Navegació inferior -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9,22 9,12 15,12 15,22"/>
+      </svg>
+      Inici
+    </a>
+    <a href="xofer.html" class="nav-item">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="1" y="3" width="15" height="13" rx="1"/>
+        <path d="M16 8l4 2v5h-4"/>
+        <circle cx="5.5" cy="18.5" r="2.5"/>
+        <circle cx="18.5" cy="18.5" r="2.5"/>
+      </svg>
+      Xofer
+    </a>
+    <button class="nav-item active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" rx="1"/>
+        <rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/>
+        <rect x="14" y="14" width="7" height="7" rx="1"/>
+      </svg>
+      Dashboard
+    </button>
+  </nav>
+
+  <script src="data.js"></script>
+  <script>
+    // ============================================================
+    // gestor.html — Lògica del dashboard de gestió
+    // ============================================================
+
+    // Etiquetes visuals per als estats dels vehicles
+    const ESTAT_CONFIG = {
+      en_ruta:   { label: 'En ruta',   cssClass: 'ok',    badgeClass: 'badge-ok'    },
+      en_moll:   { label: 'Al moll',   cssClass: 'alert', badgeClass: 'badge-alert' },
+      alert:     { label: 'Alerta',    cssClass: 'danger',badgeClass: 'badge-danger'},
+      completat: { label: 'Completat', cssClass: 'done',  badgeClass: 'badge-neutral'}
+    };
+
+    // Etiquetes de les zones
+    const ZONES_CONFIG = [
+      { key: 'nord',      label: 'Nord',      icon: '🌊', hub: 'Sa Pobla'     },
+      { key: 'palma',     label: 'Palma',     icon: '🏙️', hub: 'Son Castelló' },
+      { key: 'palmanova', label: 'Palmanova', icon: '🏖️', hub: 'Son Castelló' },
+      { key: 'peguera',   label: 'Peguera',   icon: '⛵', hub: 'Son Castelló' },
+      { key: 'est',       label: 'Est',       icon: '🌅', hub: 'Son Castelló' }
+    ];
+
+    /**
+     * Punt d'entrada — inicialitza tot el dashboard
+     */
+    function inicialitzar() {
+      actualitzarHora();
+      renderStats();
+      renderAlertes();
+      renderZones();
+      renderVehicles();
+    }
+
+    /**
+     * Actualitza l'hora a la capçalera cada minut
+     */
+    function actualitzarHora() {
+      const ara = new Date();
+      const hora = `${String(ara.getHours()).padStart(2,'0')}:${String(ara.getMinutes()).padStart(2,'0')}`;
+      document.getElementById('hora-actual').textContent = `Hub Sa Pobla · ${hora}h`;
+    }
+
+    /**
+     * Calcula i renderitza tots els comptadors del resum
+     */
+    function renderStats() {
+      const resum = calcularResumFlota();
+
+      // CO2 emès total de la flota
+      const co2Emes = resum.co2_total;
+
+      // CO2 estalviat: diferència entre ruta no optimitzada (estimem +25%) i la real
+      const co2NoOptimitzat = Math.round(co2Emes * 1.25 * 10) / 10;
+      const co2Estalviat    = Math.round((co2NoOptimitzat - co2Emes) * 10) / 10;
+
+      // Percentatge de progrés cap a l'objectiu
+      const pct = Math.min(100, Math.round((co2Estalviat / CO2_OBJECTIU_ESTALVI) * 100));
+
+      document.getElementById('stat-km').textContent           = resum.km_totals;
+      document.getElementById('stat-co2-estalviat').textContent = co2Estalviat;
+      document.getElementById('stat-vehicles').textContent     = resum.vehicles_actius;
+      document.getElementById('stat-alertes').textContent      = ALERTES.filter(a => a.estat === 'activa').length;
+      document.getElementById('co2-actual').textContent        = co2Estalviat;
+      document.getElementById('co2-objectiu').textContent      = CO2_OBJECTIU_ESTALVI;
+
+      // Anima la barra de progrés
+      setTimeout(() => {
+        document.getElementById('co2-bar').style.width = pct + '%';
+      }, 100);
+
+      // Badge d'alertes a la capçalera
+      const numAlertes = ALERTES.filter(a => a.estat === 'activa').length;
+      document.getElementById('badge-alertes').innerHTML = numAlertes > 0
+        ? `<span class="badge badge-danger">${numAlertes}</span>`
+        : '';
+    }
+
+    /**
+     * Renderitza la llista d'alertes actives
+     */
+    function renderAlertes() {
+      const actives = ALERTES.filter(a => a.estat === 'activa');
+      const cont    = document.getElementById('llista-alertes');
+
+      if (!actives.length) {
+        cont.innerHTML = `
+          <div class="alert-box success">
+            <div class="alert-header">✅ Cap alerta activa</div>
+            <div class="alert-body">Tots els vehicles operen amb normalitat.</div>
+          </div>`;
+        return;
+      }
+
+      let html = '';
+      actives.forEach(alerta => {
+        const hotel = getHotelById(alerta.hotel_id);
+        const nomHotel = hotel ? hotel.nom : alerta.hotel_id;
+
+        html += `
+          <div class="alert-box danger" style="margin-bottom: 8px;">
+            <div class="alert-header">
+              🚨 ${alerta.hora_detectada}h · ${nomHotel}
+            </div>
+            <div class="alert-body">
+              ${alerta.missatge}<br>
+              <span style="color:var(--alert);">→ ${alerta.recomanacio}</span>
+              ${alerta.vehicles_afectats.length
+                ? `<br><span class="text-mono" style="font-size:11px;">Vehicles: ${alerta.vehicles_afectats.join(', ')}</span>`
+                : ''
+              }
+            </div>
+          </div>
+        `;
+      });
+
+      cont.innerHTML = html;
+    }
+
+    /**
+     * Renderitza el mapa visual de zones amb vehicles i hotels
+     */
+    function renderZones() {
+      const grid = document.getElementById('zone-grid');
+      grid.innerHTML = '';
+
+      ZONES_CONFIG.forEach(zona => {
+        const hotelsZona   = getHotelsByZona(zona.key);
+        const vehiclesZona = VEHICLES.filter(v => {
+          const rutaHotels = (RUTES[v.ruta] || []).map(id => getHotelById(id)).filter(Boolean);
+          return rutaHotels.some(h => h.zona === zona.key);
+        });
+        const tenAlertes = hotelsZona.some(h => h.alerta);
+        const carrosZona = hotelsZona.reduce((acc, h) => acc + h.carros, 0);
+
+        const tile = document.createElement('div');
+        tile.className = 'zone-tile' + (tenAlertes ? ' has-alert' : '');
+        tile.innerHTML = `
+          <div class="zone-tile-name">${zona.icon} ${zona.label}</div>
+          <div class="zone-tile-count">${vehiclesZona.length}
+            <span style="font-size:14px; font-weight:400; color:var(--text-secondary);"> vehicles</span>
+          </div>
+          <div class="zone-tile-sub">
+            ${hotelsZona.length} hotels · ${carrosZona} carros
+            ${tenAlertes ? '<br><span style="color:var(--alert);">⚠️ Alerta activa</span>' : ''}
+          </div>
+        `;
+        grid.appendChild(tile);
+      });
+    }
+
+    /**
+     * Renderitza les targetes de tots els vehicles de la flota
+     */
+    function renderVehicles() {
+      const cont = document.getElementById('llista-vehicles');
+      cont.innerHTML = '';
+
+      // Ordena: alertes primer, completats últims
+      const ordre = { alert: 0, en_moll: 1, en_ruta: 2, completat: 3 };
+      const vehiclesOrdenats = [...VEHICLES].sort((a, b) =>
+        (ordre[a.estat] ?? 9) - (ordre[b.estat] ?? 9)
+      );
+
+      vehiclesOrdenats.forEach(v => {
+        const cfg        = ESTAT_CONFIG[v.estat] || ESTAT_CONFIG.en_ruta;
+        const hotelActual = v.hotel_actual ? getHotelById(v.hotel_actual) : null;
+        const co2V       = calcularCO2(v.km_fets, v.tipus);
+
+        const card = document.createElement('div');
+        card.className = `vehicle-card ${cfg.cssClass}`;
+        card.innerHTML = `
+          <div class="v-type">${v.tipus}</div>
+          <div class="v-info">
+            <div class="v-matricula">${v.matricula}</div>
+            <div class="v-xofer">${v.xofer}</div>
+            <div class="v-hotel">
+              ${hotelActual
+                ? `📍 ${hotelActual.nom}`
+                : '✓ Ruta completada'
+              }
+            </div>
+          </div>
+          <div style="text-align:right; flex-shrink:0;">
+            <span class="badge ${cfg.badgeClass}" style="margin-bottom:5px; display:inline-flex;">${cfg.label}</span>
+            <div class="text-sm text-muted text-mono" style="margin-top:4px;">${v.km_fets} km</div>
+            <div style="font-size:10px; color:var(--text-muted);">${co2V} kg CO₂</div>
+          </div>
+        `;
+        cont.appendChild(card);
+      });
+    }
+
+    /**
+     * Simula l'aparició d'una nova alerta (botó del dashboard)
+     */
+    function simularNova() {
+      // Hotels candidats sense alerta activa
+      const candidats = HOTELS.filter(h => !h.alerta && h.zona !== 'est');
+
+      if (!candidats.length) {
+        alert('Totes les alertes simulades ja estan actives.');
+        return;
+      }
+
+      // Selecciona un hotel aleatori
+      const hotel = candidats[Math.floor(Math.random() * candidats.length)];
+
+      const motius = [
+        'Camió de mercaderies bloqueja l\'accés al moll',
+        'Vehicle de manteniment al pati de càrrega',
+        'Obres de pavimentació fins les 14:00h',
+        'Camió de gas ocupa el moll fins les 11:30h'
+      ];
+      const motiu = motius[Math.floor(Math.random() * motius.length)];
+
+      // Genera l'alerta via la funció de data.js
+      const novaAlerta = simularNovaAlerta(hotel.id, `${motiu} — ${hotel.nom}`);
+
+      // Marca el hotel com a afectat
+      hotel.alerta     = true;
+      hotel.moll_ocupat = true;
+      hotel.fins_hora   = novaAlerta.fins_hora;
+
+      // Re-renderitza tot el dashboard
+      renderStats();
+      renderAlertes();
+      renderZones();
+      renderVehicles();
+
+      // Desplaça a les alertes
+      document.getElementById('zona-alertes').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Inicialitza el dashboard
+    inicialitzar();
+
+    // Actualitza l'hora cada minut
+    setInterval(actualitzarHora, 60000);
+  </script>
+</body>
+</html>

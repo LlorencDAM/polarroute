@@ -1,0 +1,729 @@
+/* ============================================================
+   style.css — PolarRoute · Disseny compartit
+   Hackathon InnovaFP 2026 · Polarier Mallorca
+   Mòbil-first · Dark theme · max-width 420px
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   Variables CSS — Colors corporatius i tokens de disseny
+   ---------------------------------------------------------- */
+:root {
+  /* Capes de fons */
+  --bg-base:        #050A14;
+  --bg-surface:     #0D1624;
+  --bg-card:        #111E35;
+  --bg-card-hover:  #162440;
+
+  /* Text */
+  --text-primary:   #F0F4FF;
+  --text-secondary: #8899BB;
+  --text-muted:     #445577;
+
+  /* Accents */
+  --accent-cyan:    #00C8E0;
+  --accent-blue:    #0066FF;
+  --accent-red:     #C8102E;   /* Vermell corporatiu Polarier */
+
+  /* Estats */
+  --ok:      #00E096;
+  --alert:   #FF9500;
+  --danger:  #FF3B5C;
+  --info:    #00C8E0;
+
+  /* Bordes */
+  --border-subtle: rgba(0, 200, 224, 0.10);
+  --border-card:   rgba(0, 200, 224, 0.17);
+
+  /* Tipografia */
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+
+  /* Espaiat */
+  --sp-xs:  4px;
+  --sp-sm:  8px;
+  --sp-md:  16px;
+  --sp-lg:  24px;
+  --sp-xl:  32px;
+
+  /* Radis */
+  --r-sm:   6px;
+  --r-md:   12px;
+  --r-lg:   18px;
+  --r-full: 9999px;
+}
+
+/* ----------------------------------------------------------
+   Reset i base
+   ---------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  max-width: 420px;
+  margin: 0 auto;
+  padding-bottom: 80px; /* Espai per la navegació inferior fixe */
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: var(--font); }
+
+/* ----------------------------------------------------------
+   Contenidor de pàgina
+   ---------------------------------------------------------- */
+.container {
+  padding: var(--sp-md);
+}
+
+/* ----------------------------------------------------------
+   Capçalera de pàgina — sticky amb blur
+   ---------------------------------------------------------- */
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+  padding: 12px var(--sp-md);
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  background: rgba(5, 10, 20, 0.94);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  z-index: 100;
+}
+
+.page-header .logo-icon {
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.page-header .header-info { flex: 1; min-width: 0; }
+
+.page-header h1 {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.page-header .subtitle {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+
+/* ----------------------------------------------------------
+   Cards
+   ---------------------------------------------------------- */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-md);
+  padding: var(--sp-md);
+  margin-bottom: var(--sp-sm);
+}
+
+.card-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-bottom: var(--sp-sm);
+}
+
+.card.card-alert  { border-color: rgba(255,149,0,.35);  background: rgba(255,149,0,.05); }
+.card.card-danger { border-color: rgba(255,59,92,.35);  background: rgba(255,59,92,.05); }
+.card.card-ok     { border-color: rgba(0,224,150,.25);  background: rgba(0,224,150,.04); }
+
+/* ----------------------------------------------------------
+   Badges d'estat
+   ---------------------------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: var(--r-full);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badge-ok      { background: rgba(0,224,150,.14);  color: var(--ok);    border: 1px solid rgba(0,224,150,.30); }
+.badge-alert   { background: rgba(255,149,0,.14);  color: var(--alert); border: 1px solid rgba(255,149,0,.30); }
+.badge-danger  { background: rgba(255,59,92,.14);  color: var(--danger);border: 1px solid rgba(255,59,92,.30); }
+.badge-info    { background: rgba(0,200,224,.14);  color: var(--info);  border: 1px solid rgba(0,200,224,.25); }
+.badge-neutral { background: rgba(136,153,187,.12);color: var(--text-secondary); border: 1px solid rgba(136,153,187,.22); }
+
+/* Punt indicador d'estat pulsant */
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--r-full);
+  flex-shrink: 0;
+}
+
+.status-dot.ok     { background: var(--ok); }
+.status-dot.alert  { background: var(--alert);  animation: pulse-dot 1.6s ease-in-out infinite; }
+.status-dot.danger { background: var(--danger); animation: pulse-dot 1.2s ease-in-out infinite; }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+/* ----------------------------------------------------------
+   Botons
+   ---------------------------------------------------------- */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-sm);
+  width: 100%;
+  padding: 14px var(--sp-lg);
+  border: none;
+  border-radius: var(--r-md);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .18s, transform .12s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+  color: #fff;
+}
+
+.btn-primary:active { opacity: .8; transform: scale(.97); }
+.btn-primary:disabled { opacity: .35; cursor: not-allowed; }
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-card);
+}
+.btn-secondary:active { background: var(--bg-card-hover); }
+
+.btn-danger {
+  background: rgba(255,59,92,.12);
+  color: var(--danger);
+  border: 1px solid rgba(255,59,92,.28);
+}
+.btn-danger:active { opacity: .7; }
+
+.btn-sm {
+  padding: 9px 16px;
+  font-size: 13px;
+  width: auto;
+  border-radius: var(--r-sm);
+}
+
+/* ----------------------------------------------------------
+   Formularis
+   ---------------------------------------------------------- */
+.form-group { margin-bottom: var(--sp-md); }
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 5px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 12px var(--sp-md);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-sm);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 15px;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color .2s;
+  outline: none;
+}
+
+.form-control:focus { border-color: var(--accent-cyan); }
+.form-control option { background: var(--bg-surface); color: var(--text-primary); }
+
+/* ----------------------------------------------------------
+   Llista de parades (xofer)
+   ---------------------------------------------------------- */
+.stop-list { list-style: none; }
+
+.stop-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-sm);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.stop-item:last-child { border-bottom: none; }
+.stop-item.done { opacity: .45; }
+
+.stop-number {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-full);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.stop-info { flex: 1; min-width: 0; }
+.stop-name { font-size: 14px; font-weight: 600; }
+.stop-meta { font-size: 12px; color: var(--text-secondary); margin-top: 2px; line-height: 1.5; }
+.stop-badge { flex-shrink: 0; margin-top: 2px; }
+
+/* ----------------------------------------------------------
+   Caixes d'alerta
+   ---------------------------------------------------------- */
+.alert-box {
+  border-radius: var(--r-md);
+  padding: var(--sp-md);
+  margin-bottom: var(--sp-sm);
+}
+
+.alert-box:last-child { margin-bottom: 0; }
+
+.alert-box.warning { background: rgba(255,149,0,.09);  border: 1px solid rgba(255,149,0,.32); }
+.alert-box.danger  { background: rgba(255,59,92,.09);  border: 1px solid rgba(255,59,92,.32); }
+.alert-box.success { background: rgba(0,224,150,.07);  border: 1px solid rgba(0,224,150,.28); }
+.alert-box.info    { background: rgba(0,200,224,.07);  border: 1px solid rgba(0,200,224,.22); }
+
+.alert-header {
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 5px;
+}
+
+.alert-box.warning .alert-header { color: var(--alert); }
+.alert-box.danger  .alert-header { color: var(--danger); }
+.alert-box.success .alert-header { color: var(--ok); }
+.alert-box.info    .alert-header { color: var(--info); }
+
+.alert-body { font-size: 13px; color: var(--text-secondary); line-height: 1.6; }
+
+/* ----------------------------------------------------------
+   Estadístiques / comptadors
+   ---------------------------------------------------------- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-sm);
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-md);
+  padding: var(--sp-md);
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+
+.stat-value.cyan   { color: var(--accent-cyan); }
+.stat-value.green  { color: var(--ok); }
+.stat-value.orange { color: var(--alert); }
+.stat-value.blue   { color: var(--accent-blue); }
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 3px;
+}
+
+/* ----------------------------------------------------------
+   Mapa de zones (gestor) — taula visual 2x3
+   ---------------------------------------------------------- */
+.zone-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-sm);
+}
+
+.zone-tile {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-md);
+  padding: var(--sp-sm) var(--sp-md);
+}
+
+.zone-tile.has-alert { border-color: rgba(255,149,0,.35); }
+.zone-tile.has-danger { border-color: rgba(255,59,92,.35); }
+
+.zone-tile-name {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.zone-tile-count {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.zone-tile-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ----------------------------------------------------------
+   Targetes de vehicle (gestor)
+   ---------------------------------------------------------- */
+.vehicle-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-md);
+  padding: var(--sp-md);
+  margin-bottom: var(--sp-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-md);
+}
+
+.vehicle-card.alert  { border-left: 3px solid var(--alert); }
+.vehicle-card.danger { border-left: 3px solid var(--danger); }
+.vehicle-card.ok     { border-left: 3px solid var(--ok); }
+.vehicle-card.done   { opacity: .55; }
+
+.vehicle-card .v-type {
+  width: 40px;
+  height: 40px;
+  background: var(--bg-surface);
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-cyan);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.vehicle-card .v-info { flex: 1; min-width: 0; }
+.vehicle-card .v-matricula { font-size: 14px; font-weight: 700; font-family: var(--font-mono); }
+.vehicle-card .v-xofer { font-size: 12px; color: var(--text-secondary); margin-top: 1px; }
+.vehicle-card .v-hotel { font-size: 11px; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ----------------------------------------------------------
+   Toggle switch (hotel.html — moll ocupat)
+   ---------------------------------------------------------- */
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-md) 0;
+}
+
+.toggle-label-text {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.toggle-wrap { position: relative; width: 52px; height: 28px; }
+
+.toggle-wrap input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-track {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-card);
+  border-radius: var(--r-full);
+  cursor: pointer;
+  transition: background .25s, border-color .25s;
+}
+
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 3px;
+  top: 3px;
+  background: var(--text-muted);
+  border-radius: var(--r-full);
+  transition: transform .25s, background .25s;
+}
+
+.toggle-wrap input:checked ~ .toggle-track {
+  background: rgba(255,59,92,.2);
+  border-color: var(--danger);
+}
+
+.toggle-wrap input:checked ~ .toggle-track::after {
+  transform: translateX(24px);
+  background: var(--danger);
+}
+
+/* ----------------------------------------------------------
+   Historial / Timeline (hotel.html)
+   ---------------------------------------------------------- */
+.timeline { list-style: none; padding-left: 18px; position: relative; }
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 8px;
+  bottom: 8px;
+  width: 1px;
+  background: var(--border-subtle);
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: var(--sp-md);
+}
+.timeline-item:last-child { padding-bottom: 0; }
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -15px;
+  top: 5px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-full);
+  background: var(--accent-cyan);
+}
+
+.timeline-item.cancel::before  { background: var(--alert); }
+.timeline-item.alerta::before  { background: var(--danger); animation: pulse-dot 1.2s infinite; }
+.timeline-item.espera::before  { background: var(--alert); }
+
+.timeline-hora { font-size: 11px; font-family: var(--font-mono); color: var(--accent-cyan); }
+.timeline-text { font-size: 13px; color: var(--text-primary); margin-top: 1px; }
+.timeline-sub  { font-size: 11px; color: var(--text-secondary); }
+
+/* ----------------------------------------------------------
+   Navegació inferior fixe
+   ---------------------------------------------------------- */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 420px;
+  background: rgba(11, 18, 32, 0.97);
+  border-top: 1px solid var(--border-card);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0 max(12px, env(safe-area-inset-bottom));
+  z-index: 200;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 12px;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: none;
+  background: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: color .18s;
+}
+
+.nav-item.active { color: var(--accent-cyan); }
+
+.nav-item svg { width: 22px; height: 22px; }
+
+/* ----------------------------------------------------------
+   Seccions amb títol
+   ---------------------------------------------------------- */
+.section { margin-bottom: var(--sp-lg); }
+
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin-bottom: var(--sp-sm);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-subtle);
+  margin: var(--sp-md) 0;
+}
+
+/* ----------------------------------------------------------
+   Pantalla de login (index.html)
+   ---------------------------------------------------------- */
+.login-splash {
+  text-align: center;
+  padding: var(--sp-xl) var(--sp-md) var(--sp-lg);
+}
+
+.brand-icon {
+  width: 76px;
+  height: 76px;
+  background: linear-gradient(140deg, var(--accent-cyan), var(--accent-blue));
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--sp-md);
+  font-size: 38px;
+  box-shadow: 0 8px 36px rgba(0, 102, 255, 0.38);
+}
+
+.brand-name {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-blue) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.brand-tagline {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* Selector de rols */
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--sp-sm);
+  margin-bottom: var(--sp-lg);
+}
+
+.role-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: var(--sp-md) var(--sp-sm);
+  background: var(--bg-card);
+  border: 2px solid var(--border-card);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: all .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.role-btn .role-icon { font-size: 30px; }
+.role-btn .role-text { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+
+.role-btn.selected,
+.role-btn:active {
+  border-color: var(--accent-cyan);
+  color: var(--text-primary);
+  background: rgba(0,200,224,.07);
+  box-shadow: 0 0 0 1px var(--accent-cyan);
+}
+
+/* Chip de vehicle (xofer) */
+.vehicle-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  background: rgba(0,102,255,.15);
+  border: 1px solid rgba(0,102,255,.30);
+  border-radius: var(--r-full);
+  font-size: 13px;
+  font-weight: 800;
+  color: #5599FF;
+  font-family: var(--font-mono);
+  letter-spacing: 0.03em;
+}
+
+/* ----------------------------------------------------------
+   Utilitats generals
+   ---------------------------------------------------------- */
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-center  { display: flex; align-items: center; gap: var(--sp-sm); }
+.text-sm      { font-size: 12px; }
+.text-muted   { color: var(--text-secondary); }
+.text-danger  { color: var(--danger); }
+.text-ok      { color: var(--ok); }
+.text-mono    { font-family: var(--font-mono); }
+.mt-sm        { margin-top: var(--sp-sm); }
+.mt-md        { margin-top: var(--sp-md); }
+.mb-md        { margin-bottom: var(--sp-md); }
+.center       { text-align: center; }
